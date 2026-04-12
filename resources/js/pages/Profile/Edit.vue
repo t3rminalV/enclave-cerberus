@@ -19,12 +19,32 @@
         </div>
       </div>
 
+      <!-- Profile incomplete warning -->
+      <div v-if="!isComplete" class="alert-warning mb-6">
+        <AlertTriangle class="w-4 h-4 shrink-0" />
+        <span>Your profile is incomplete. First name, last name, and contact number are required before you can apply to events.</span>
+      </div>
+
       <form @submit.prevent="form.patch(route('profile.update'))">
         <div class="card card-body space-y-5">
-          <h2 class="font-semibold text-white">Contact Information</h2>
+          <h2 class="font-semibold text-white">Personal Details</h2>
           <div class="grid sm:grid-cols-2 gap-4">
             <div>
-              <label class="label">Phone Number</label>
+              <label class="label">First Name <span class="text-red-400">*</span></label>
+              <input v-model="form.first_name" class="input" :class="{ 'input-error': form.errors.first_name }" placeholder="Jane" />
+              <p v-if="form.errors.first_name" class="form-error">{{ form.errors.first_name }}</p>
+            </div>
+            <div>
+              <label class="label">Last Name <span class="text-red-400">*</span></label>
+              <input v-model="form.last_name" class="input" :class="{ 'input-error': form.errors.last_name }" placeholder="Smith" />
+              <p v-if="form.errors.last_name" class="form-error">{{ form.errors.last_name }}</p>
+            </div>
+          </div>
+
+          <h2 class="font-semibold text-white pt-2">Contact Information</h2>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="label">Contact Number <span class="text-red-400">*</span></label>
               <input v-model="form.phone" class="input" :class="{ 'input-error': form.errors.phone }" placeholder="+44 7700 900000" />
               <p v-if="form.errors.phone" class="form-error">{{ form.errors.phone }}</p>
             </div>
@@ -71,12 +91,20 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { AlertTriangle } from 'lucide-vue-next';
 import AppLayout from '@/components/layout/AppLayout.vue';
 
 const props = defineProps<{ user: any }>();
 
+const isComplete = computed(() =>
+  props.user.first_name && props.user.last_name && props.user.phone
+);
+
 const form = useForm({
+  first_name: props.user.first_name ?? '',
+  last_name: props.user.last_name ?? '',
   phone: props.user.phone ?? '',
   emergency_contact_name: props.user.emergency_contact_name ?? '',
   emergency_contact_phone: props.user.emergency_contact_phone ?? '',

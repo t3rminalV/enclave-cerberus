@@ -29,6 +29,11 @@ class ApplicationController extends Controller
             return redirect()->route('volunteer.applications.show', $existing);
         }
 
+        if (! $user->hasCompleteProfile()) {
+            return redirect()->route('profile.edit')
+                ->with('error', 'Please complete your profile before applying. First name, last name, and contact number are required.');
+        }
+
         $form = $event->stageOneForm()->with('fields')->firstOrFail();
 
         return Inertia::render('Volunteer/Applications/Apply', [
@@ -53,6 +58,7 @@ class ApplicationController extends Controller
         return Inertia::render('Volunteer/Applications/Show', [
             'application' => $application,
             'form' => $form,
+            'user' => auth()->user(),
         ]);
     }
 
@@ -62,6 +68,7 @@ class ApplicationController extends Controller
 
         $user = auth()->user();
         abort_if($user->getApplicationForEvent($event->id) !== null, 409, 'You have already applied to this event.');
+        abort_unless($user->hasCompleteProfile(), 403, 'Your profile is incomplete. Please add your first name, last name, and contact number before applying.');
 
         $form = $event->stageOneForm()->with('fields')->firstOrFail();
 

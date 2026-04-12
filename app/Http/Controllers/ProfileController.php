@@ -15,7 +15,9 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'phone' => 'nullable|string|max:30',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'phone' => 'required|string|max:30',
             'emergency_contact_name' => 'nullable|string|max:255',
             'emergency_contact_phone' => 'nullable|string|max:30',
             'tshirt_size' => 'nullable|in:XS,S,M,L,XL,XXL,XXXL',

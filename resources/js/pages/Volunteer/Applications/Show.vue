@@ -14,6 +14,16 @@
         <ApplicationStatusBadge :status="application.status" />
       </div>
 
+      <!-- Profile reminder -->
+      <div class="alert-info mb-6">
+        <Info class="w-4 h-4 shrink-0" />
+        <span>
+          Keep your
+          <Link :href="route('profile.edit')" class="underline hover:no-underline">profile</Link>
+          up to date — your name and contact number are shared with event organisers.
+        </span>
+      </div>
+
       <!-- Status messages -->
       <div v-if="application.status === 'accepted'" class="alert-success mb-6 flex items-start gap-3">
         <CheckCircle class="w-5 h-5 mt-0.5 shrink-0" />
@@ -105,13 +115,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ChevronLeft, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-vue-next';
+import { ChevronLeft, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-vue-next';
 import { formatDistanceToNow } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ApplicationStatusBadge from '@/components/ui/ApplicationStatusBadge.vue';
 import FormFieldInput from '@/components/forms/FormFieldInput.vue';
 
-const props = defineProps<{ application: any; form: any }>();
+const props = defineProps<{ application: any; form: any; user: any }>();
 
 const fieldValues = ref<Record<number, any>>(
   Object.fromEntries((props.application.responses ?? []).map((r: any) => [r.form_field_id, r.value]))

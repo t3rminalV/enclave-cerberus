@@ -10,13 +10,13 @@
         <p v-if="event.location" class="page-subtitle">{{ event.location }} · {{ formatDate(event.starts_at) }}</p>
       </div>
 
-      <!-- Profile notice -->
-      <div v-if="!user.phone" class="alert-info mb-6">
+      <!-- Profile reminder -->
+      <div class="alert-info mb-6">
         <Info class="w-4 h-4 shrink-0" />
         <span>
-          Your profile is incomplete.
-          <Link :href="route('profile.edit')" class="underline hover:no-underline">Update your profile</Link>
-          before submitting for a smoother experience.
+          Make sure your
+          <Link :href="route('profile.edit')" class="underline hover:no-underline">profile details</Link>
+          are up to date — your name and contact number are shared with event organisers.
         </span>
       </div>
 

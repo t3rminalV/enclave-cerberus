@@ -19,6 +19,8 @@ class User extends Authenticatable
         'discord_username',
         'discord_avatar',
         'role',
+        'first_name',
+        'last_name',
         'phone',
         'emergency_contact_name',
         'emergency_contact_phone',
@@ -83,6 +85,11 @@ class User extends Authenticatable
             return "https://cdn.discordapp.com/avatars/{$this->discord_id}/{$this->discord_avatar}.png";
         }
         return "https://cdn.discordapp.com/embed/avatars/0.png";
+    }
+
+    public function hasCompleteProfile(): bool
+    {
+        return filled($this->first_name) && filled($this->last_name) && filled($this->phone);
     }
 
     public function getApplicationForEvent(int $eventId): ?Application
