@@ -67,7 +67,7 @@ const processing = ref(false);
 
 function formatDate(d: string) { return format(new Date(d), 'dd MMM yyyy'); }
 
-function buildFormData(submit: boolean) {
+function buildFormData() {
   const fd = new FormData();
   for (const [id, val] of Object.entries(fieldValues.value)) {
     if (Array.isArray(val)) {
@@ -86,7 +86,7 @@ function buildFormData(submit: boolean) {
 
 function save() {
   processing.value = true;
-  router.post(route('volunteer.applications.store', props.event.id), buildFormData(false), {
+  router.post(route('volunteer.applications.store', props.event.id), buildFormData(), {
     forceFormData: true,
     onError: (e) => { errors.value = e; },
     onFinish: () => { processing.value = false; },
@@ -95,12 +95,10 @@ function save() {
 
 function submit() {
   processing.value = true;
-  // First save, then submit
-  router.post(route('volunteer.applications.store', props.event.id), buildFormData(true), {
+  const fd = buildFormData();
+  fd.append('_submit', '1');
+  router.post(route('volunteer.applications.store', props.event.id), fd, {
     forceFormData: true,
-    onSuccess: (page) => {
-      // Find the new application id from redirect
-    },
     onError: (e) => { errors.value = e; },
     onFinish: () => { processing.value = false; },
   });

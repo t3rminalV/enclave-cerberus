@@ -41,14 +41,15 @@ class DocumentController extends Controller
             'notify' => 'boolean',
         ]);
 
+        $disk = config('filesystems.default');
         $file = $request->file('file');
-        $path = $file->store("documents/{$event->slug}", 'local');
+        $path = $file->store("documents/{$event->slug}", $disk);
 
         $document = Document::create([
             'event_id' => $event->id,
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'disk' => 'local',
+            'disk' => $disk,
             'path' => $path,
             'original_filename' => $file->getClientOriginalName(),
             'mime_type' => $file->getMimeType(),

@@ -57,6 +57,7 @@
                 v-for="field in form.fields"
                 :key="field.id"
                 :field="field"
+                :error="errors[`fields.${field.id}`]"
                 v-model="fieldValues[field.id]"
                 @file-change="(files) => fileValues[field.id] = files"
               />
@@ -127,6 +128,7 @@ const fieldValues = ref<Record<number, any>>(
   Object.fromEntries((props.application.responses ?? []).map((r: any) => [r.form_field_id, r.value]))
 );
 const fileValues = ref<Record<number, File[]>>({});
+const errors = ref<Record<string, string>>({});
 const processing = ref(false);
 
 function formatRelative(d: string) { return formatDistanceToNow(new Date(d), { addSuffix: true }); }
@@ -145,14 +147,19 @@ function buildFormData() {
 
 function save() {
   processing.value = true;
-  router.post(route('volunteer.applications.update', props.application.id) + '?_method=PATCH', buildFormData(), {
-    forceFormData: true, onFinish: () => { processing.value = false; },
+  const fd = buildFormData();
+  fd.append('_method', 'PATCH');
+  router.post(route('volunteer.applications.update', props.application.id), fd, {
+    forceFormData: true,
+    onFinish: () => { processing.value = false; },
   });
 }
 
 function submit() {
   processing.value = true;
-  router.post(route('volunteer.applications.submit', props.application.id), {}, {
+  router.post(route('volunteer.applications.submit', props.application.id), buildFormData(), {
+    forceFormData: true,
+    onError: (e) => { errors.value = e; },
     onFinish: () => { processing.value = false; },
   });
 }

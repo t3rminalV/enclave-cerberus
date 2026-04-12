@@ -12,6 +12,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ApplicationController extends Controller
@@ -74,8 +75,13 @@ class ApplicationController extends Controller
         }
 
         $form = $event->stageOneForm()->with('fields')->firstOrFail();
+        $shouldSubmit = $request->boolean('_submit');
 
-        $application = DB::transaction(function () use ($request, $event, $user, $form) {
+        if ($shouldSubmit) {
+            $this->validateRequiredFields($request, $form);
+        }
+
+        $application = DB::transaction(function () use ($request, $event, $user, $form, $shouldSubmit) {
             $application = Application::create([
                 'user_id' => $user->id,
                 'event_id' => $event->id,
@@ -85,10 +91,21 @@ class ApplicationController extends Controller
 
             $this->saveFormResponses($request, $application, $form);
 
+            if ($shouldSubmit) {
+                $application->update(['status' => 'submitted', 'submitted_at' => now()]);
+                $application->statusHistory()->create([
+                    'from_status' => 'draft',
+                    'to_status' => 'submitted',
+                    'changed_by' => $user->id,
+                ]);
+                $this->notifications->notifyApplicationReceived($application);
+            }
+
             return $application;
         });
 
-        return redirect()->route('volunteer.applications.show', $application)->with('success', 'Application saved as draft.');
+        $message = $shouldSubmit ? 'Application submitted successfully!' : 'Application saved as draft.';
+        return redirect()->route('volunteer.applications.show', $application)->with('success', $message);
     }
 
     public function update(Request $request, Application $application)
@@ -119,6 +136,8 @@ class ApplicationController extends Controller
             ->where('stage', $application->current_stage)
             ->where('is_active', true)
             ->firstOrFail();
+
+        $this->validateRequiredFields($request, $form, $application);
 
         DB::transaction(function () use ($request, $application, $form) {
             $this->saveFormResponses($request, $application, $form);
@@ -153,6 +172,41 @@ class ApplicationController extends Controller
         return Storage::disk($file->disk)->download($file->path, $file->original_filename);
     }
 
+    private function validateRequiredFields(Request $request, Form $form, ?Application $application = null): void
+    {
+        $errors = [];
+
+        foreach ($form->fields as $field) {
+            if ($field->isDisplayOnly() || ! $field->required) {
+                continue;
+            }
+
+            $inputKey = "fields.{$field->id}";
+
+            if ($field->isFileType()) {
+                $hasNew = $request->hasFile($inputKey);
+                $hasExisting = $application
+                    ? ApplicationFile::where('application_id', $application->id)
+                        ->where('form_field_id', $field->id)
+                        ->exists()
+                    : false;
+
+                if (! $hasNew && ! $hasExisting) {
+                    $errors[$inputKey] = "The {$field->label} field is required.";
+                }
+            } else {
+                $value = $request->input($inputKey);
+                if ($value === null || $value === '' || $value === []) {
+                    $errors[$inputKey] = "The {$field->label} field is required.";
+                }
+            }
+        }
+
+        if (! empty($errors)) {
+            throw ValidationException::withMessages($errors);
+        }
+    }
+
     private function saveFormResponses(Request $request, Application $application, Form $form): void
     {
         foreach ($form->fields as $field) {
@@ -174,12 +228,13 @@ class ApplicationController extends Controller
                             $f->delete();
                         });
 
+                    $disk = config('filesystems.default');
                     foreach (array_slice($uploadedFiles, 0, $field->max_files ?? 1) as $file) {
-                        $path = $file->store("applications/{$application->id}", 'local');
+                        $path = $file->store("applications/{$application->id}", $disk);
                         ApplicationFile::create([
                             'application_id' => $application->id,
                             'form_field_id' => $field->id,
-                            'disk' => 'local',
+                            'disk' => $disk,
                             'path' => $path,
                             'original_filename' => $file->getClientOriginalName(),
                             'mime_type' => $file->getMimeType(),
