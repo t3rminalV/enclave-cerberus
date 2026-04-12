@@ -24,7 +24,9 @@ class HandleInertiaRequests extends Middleware
                     'discord_username' => $request->user()->discord_username,
                     'discord_id' => $request->user()->discord_id,
                     'avatar_url' => $request->user()->avatar_url,
+                    'role' => $request->user()->role,
                     'is_admin' => $request->user()->is_admin,
+                    'is_staff' => $request->user()->isStaff(),
                 ] : null,
             ],
             'flash' => [

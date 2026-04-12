@@ -27,7 +27,7 @@ class AdminSeeder extends Seeder
             return;
         }
 
-        $user->update(['is_admin' => true]);
+        $user->update(['role' => 'admin']);
         $this->command->info("Made {$user->name} an admin.");
     }
 }

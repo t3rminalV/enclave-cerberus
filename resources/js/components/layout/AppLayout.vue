@@ -14,8 +14,8 @@
 
       <!-- Nav -->
       <nav class="flex-1 px-3 py-4 overflow-y-auto space-y-1">
-        <template v-if="isAdmin">
-          <p class="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-surface-500">Admin</p>
+        <template v-if="isStaff">
+          <p class="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-surface-500">Staff</p>
           <NavLink :href="route('admin.dashboard')" :active="isRoute('admin.dashboard')">
             <LayoutDashboard class="w-4 h-4" /> Dashboard
           </NavLink>
@@ -27,6 +27,9 @@
           </NavLink>
           <NavLink :href="route('admin.audit-log')" :active="isRoute('admin.audit-log')">
             <FileText class="w-4 h-4" /> Audit Log
+          </NavLink>
+          <NavLink v-if="isAdmin" :href="route('admin.settings')" :active="isRoute('admin.settings')">
+            <SlidersHorizontal class="w-4 h-4" /> Settings
           </NavLink>
         </template>
         <template v-else>
@@ -93,7 +96,7 @@
           </button>
         </div>
         <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          <template v-if="isAdmin">
+          <template v-if="isStaff">
             <NavLink :href="route('admin.dashboard')" :active="isRoute('admin.dashboard')" @click="mobileOpen = false">
               <LayoutDashboard class="w-4 h-4" /> Dashboard
             </NavLink>
@@ -102,6 +105,12 @@
             </NavLink>
             <NavLink :href="route('admin.volunteers.index')" :active="isRoute('admin.volunteers.*')" @click="mobileOpen = false">
               <Users class="w-4 h-4" /> Volunteers
+            </NavLink>
+            <NavLink :href="route('admin.audit-log')" :active="isRoute('admin.audit-log')" @click="mobileOpen = false">
+              <FileText class="w-4 h-4" /> Audit Log
+            </NavLink>
+            <NavLink v-if="isAdmin" :href="route('admin.settings')" :active="isRoute('admin.settings')" @click="mobileOpen = false">
+              <SlidersHorizontal class="w-4 h-4" /> Settings
             </NavLink>
           </template>
           <template v-else>
@@ -134,13 +143,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { LayoutDashboard, Calendar, Users, Settings, LogOut, Menu, X, FileText } from 'lucide-vue-next';
+import { LayoutDashboard, Calendar, Users, Settings, SlidersHorizontal, LogOut, Menu, X, FileText } from 'lucide-vue-next';
 import NavLink from '@/components/ui/NavLink.vue';
 import FlashMessages from '@/components/ui/FlashMessages.vue';
 
 const page = usePage();
 const user = page.props.auth.user;
-const isAdmin = user?.is_admin;
+const isAdmin = user?.role === 'admin';
+const isStaff = user?.is_staff;
 const mobileOpen = ref(false);
 
 function isRoute(pattern: string): boolean {
