@@ -14,7 +14,7 @@ class DashboardController extends Controller
     public function index()
     {
         $stats = [
-            'total_volunteers' => User::where('is_admin', false)->count(),
+            'total_volunteers' => User::where('role', 'volunteer')->count(),
             'total_events' => Event::count(),
             'active_events' => Event::whereIn('status', ['open', 'closed'])->count(),
             'pending_applications' => Application::whereIn('status', ['submitted', 'under_review'])->count(),

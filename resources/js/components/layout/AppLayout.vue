@@ -141,16 +141,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { LayoutDashboard, Calendar, Users, Settings, SlidersHorizontal, LogOut, Menu, X, FileText } from 'lucide-vue-next';
 import NavLink from '@/components/ui/NavLink.vue';
 import FlashMessages from '@/components/ui/FlashMessages.vue';
 
 const page = usePage();
-const user = page.props.auth.user;
-const isAdmin = user?.role === 'admin';
-const isStaff = user?.is_staff;
+const user = computed(() => page.props.auth.user as any);
+const isAdmin = computed(() => user.value?.role === 'admin');
+const isStaff = computed(() => user.value?.role === 'admin' || user.value?.role === 'organiser');
 const mobileOpen = ref(false);
 
 function isRoute(pattern: string): boolean {
