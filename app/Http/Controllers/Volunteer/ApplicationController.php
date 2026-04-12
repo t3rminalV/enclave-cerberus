@@ -68,7 +68,10 @@ class ApplicationController extends Controller
 
         $user = auth()->user();
         abort_if($user->getApplicationForEvent($event->id) !== null, 409, 'You have already applied to this event.');
-        abort_unless($user->hasCompleteProfile(), 403, 'Your profile is incomplete. Please add your first name, last name, and contact number before applying.');
+        if (! $user->hasCompleteProfile()) {
+            return redirect()->route('profile.edit')
+                ->with('error', 'Please complete your profile before applying. First name, last name, and contact number are required.');
+        }
 
         $form = $event->stageOneForm()->with('fields')->firstOrFail();
 
