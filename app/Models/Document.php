@@ -46,6 +46,8 @@ class Document extends Model
     {
         if ($user->is_admin) return true;
 
+        if ($this->visibility === 'public') return true;
+
         $application = $user->getApplicationForEvent($event->id);
         if (!$application) return false;
 

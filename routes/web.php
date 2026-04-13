@@ -91,6 +91,7 @@ Route::middleware(['auth'])->group(function () {
         // Documents
         Route::get('/events/{event}/documents', [Admin\DocumentController::class, 'index'])->name('events.documents.index');
         Route::post('/events/{event}/documents', [Admin\DocumentController::class, 'store'])->name('events.documents.store');
+        Route::patch('/events/{event}/documents/{document}', [Admin\DocumentController::class, 'update'])->name('events.documents.update');
         Route::get('/events/{event}/documents/{document}/download', [Admin\DocumentController::class, 'download'])->name('events.documents.download');
         Route::delete('/events/{event}/documents/{document}', [Admin\DocumentController::class, 'destroy'])->name('events.documents.destroy');
 

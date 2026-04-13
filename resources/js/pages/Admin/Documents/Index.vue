@@ -52,6 +52,9 @@
               <td class="text-surface-400 text-xs whitespace-nowrap">{{ formatDate(doc.created_at) }}</td>
               <td>
                 <div class="flex items-center gap-1 justify-end">
+                  <button @click="openEdit(doc)" class="btn-ghost btn-sm">
+                    <Pencil class="w-3.5 h-3.5" />
+                  </button>
                   <a :href="route('admin.events.documents.download', [event.id, doc.id])" class="btn-ghost btn-sm">
                     <Download class="w-3.5 h-3.5" />
                   </a>
@@ -82,8 +85,9 @@
           <div>
             <label class="label">Visibility</label>
             <select v-model="uploadForm.visibility" class="select">
-              <option value="accepted_only">Accepted Volunteers Only</option>
+              <option value="public">Public — visible before applying</option>
               <option value="all_volunteers">All Applicants</option>
+              <option value="accepted_only">Accepted Volunteers Only</option>
               <option value="specific_teams">Specific Teams Only</option>
             </select>
           </div>
@@ -98,16 +102,51 @@
             </div>
           </div>
           <div>
-            <label class="label">File</label>
-            <input type="file" @change="(e) => uploadForm.file = (e.target as HTMLInputElement).files?.[0] ?? null" class="input" required />
+            <label class="label">File <span class="text-surface-500 font-normal">(max 25 MB)</span></label>
+            <input type="file" @change="onFileChange" class="input" required />
+            <p v-if="fileError" class="text-red-400 text-xs mt-1">{{ fileError }}</p>
+            <p v-else-if="errors.file" class="text-red-400 text-xs mt-1">{{ errors.file }}</p>
           </div>
           <label class="flex items-center gap-2 text-sm text-surface-300 cursor-pointer">
             <input type="checkbox" v-model="uploadForm.notify" class="rounded" />
             Notify eligible volunteers via Discord DM
           </label>
           <div class="flex gap-3 pt-2">
-            <button type="submit" :disabled="uploading" class="btn-primary">{{ uploading ? 'Uploading…' : 'Upload' }}</button>
+            <button type="submit" :disabled="uploading || !!fileError" class="btn-primary">{{ uploading ? 'Uploading…' : 'Upload' }}</button>
             <button type="button" @click="showUpload = false" class="btn-ghost">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </Modal>
+
+    <!-- Edit Permissions Modal -->
+    <Modal :show="!!editDoc" @close="editDoc = null" size="md">
+      <div class="card-body" v-if="editDoc">
+        <h2 class="font-semibold text-white text-lg mb-1">Edit Permissions</h2>
+        <p class="text-sm text-surface-400 mb-4">{{ editDoc.title }}</p>
+        <form @submit.prevent="saveEdit" class="space-y-4">
+          <div>
+            <label class="label">Visibility</label>
+            <select v-model="editForm.visibility" class="select">
+              <option value="public">Public — visible before applying</option>
+              <option value="all_volunteers">All Applicants</option>
+              <option value="accepted_only">Accepted Volunteers Only</option>
+              <option value="specific_teams">Specific Teams Only</option>
+            </select>
+          </div>
+          <div v-if="editForm.visibility === 'specific_teams'">
+            <label class="label">Teams</label>
+            <div class="space-y-2">
+              <label v-for="team in teams" :key="team.id" class="flex items-center gap-2 text-sm text-surface-200 cursor-pointer">
+                <input type="checkbox" :value="team.id" v-model="editForm.team_ids" class="rounded" />
+                <span class="w-3 h-3 rounded-full" :style="{ background: team.color }"></span>
+                {{ team.name }}
+              </label>
+            </div>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <button type="submit" :disabled="saving" class="btn-primary">{{ saving ? 'Saving…' : 'Save' }}</button>
+            <button type="button" @click="editDoc = null" class="btn-ghost">Cancel</button>
           </div>
         </form>
       </div>
@@ -116,31 +155,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ChevronRight, Upload, FolderOpen, FileText, Download, Trash2 } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ChevronRight, Upload, FolderOpen, FileText, Download, Trash2, Pencil } from 'lucide-vue-next';
 import { format } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import Modal from '@/components/ui/Modal.vue';
 
+const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB
+
 const props = defineProps<{ event: any; documents: any[]; teams: any[] }>();
+const page = usePage();
+const errors = computed(() => (page.props.errors as Record<string, string>) ?? {});
 
 const showUpload = ref(false);
 const uploading = ref(false);
+const fileError = ref('');
 const uploadForm = ref({ title: '', description: '', visibility: 'accepted_only', team_ids: [] as number[], file: null as File | null, notify: false });
+
+const editDoc = ref<any>(null);
+const saving = ref(false);
+const editForm = ref({ visibility: 'accepted_only', team_ids: [] as number[] });
 
 function formatDate(d: string) { return format(new Date(d), 'dd MMM yyyy'); }
 
 function visibilityLabel(v: string) {
-  return { all_volunteers: 'All Applicants', accepted_only: 'Accepted Only', specific_teams: 'Specific Teams' }[v] ?? v;
+  return { public: 'Public', all_volunteers: 'All Applicants', accepted_only: 'Accepted Only', specific_teams: 'Specific Teams' }[v] ?? v;
 }
 
 function visibilityBadge(v: string) {
-  return { all_volunteers: 'badge-blue', accepted_only: 'badge-green', specific_teams: 'badge-purple' }[v] ?? 'badge-gray';
+  return { public: 'badge-yellow', all_volunteers: 'badge-blue', accepted_only: 'badge-green', specific_teams: 'badge-purple' }[v] ?? 'badge-gray';
+}
+
+function onFileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0] ?? null;
+  uploadForm.value.file = file;
+  if (file && file.size > MAX_FILE_BYTES) {
+    fileError.value = `File is too large (${(file.size / 1048576).toFixed(1)} MB). Maximum size is 25 MB.`;
+  } else {
+    fileError.value = '';
+  }
 }
 
 function upload() {
-  if (!uploadForm.value.file) return;
+  if (!uploadForm.value.file || fileError.value) return;
   const fd = new FormData();
   fd.append('title', uploadForm.value.title);
   fd.append('description', uploadForm.value.description);
@@ -152,8 +210,29 @@ function upload() {
   uploading.value = true;
   router.post(route('admin.events.documents.store', props.event.id), fd, {
     forceFormData: true,
-    onSuccess: () => { showUpload.value = false; uploadForm.value = { title: '', description: '', visibility: 'accepted_only', team_ids: [], file: null, notify: false }; },
+    onSuccess: () => {
+      showUpload.value = false;
+      uploadForm.value = { title: '', description: '', visibility: 'accepted_only', team_ids: [], file: null, notify: false };
+      fileError.value = '';
+    },
     onFinish: () => { uploading.value = false; },
+  });
+}
+
+function openEdit(doc: any) {
+  editDoc.value = doc;
+  editForm.value = {
+    visibility: doc.visibility,
+    team_ids: doc.teams?.map((t: any) => t.id) ?? [],
+  };
+}
+
+function saveEdit() {
+  if (!editDoc.value) return;
+  saving.value = true;
+  router.patch(route('admin.events.documents.update', [props.event.id, editDoc.value.id]), editForm.value, {
+    onSuccess: () => { editDoc.value = null; },
+    onFinish: () => { saving.value = false; },
   });
 }
 

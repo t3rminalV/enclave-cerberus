@@ -34,10 +34,10 @@ class DocumentController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'visibility' => 'required|in:all_volunteers,accepted_only,specific_teams',
+            'visibility' => 'required|in:public,all_volunteers,accepted_only,specific_teams',
             'team_ids' => 'array',
             'team_ids.*' => 'integer|exists:teams,id',
-            'file' => 'required|file|max:51200', // 50MB
+            'file' => 'required|file|max:25600', // 25MB
             'notify' => 'boolean',
         ]);
 
@@ -70,6 +70,27 @@ class DocumentController extends Controller
         return back()->with('success', 'Document uploaded.');
     }
 
+    public function update(Request $request, Event $event, Document $document)
+    {
+        abort_if($document->event_id !== $event->id, 404);
+
+        $validated = $request->validate([
+            'visibility' => 'required|in:public,all_volunteers,accepted_only,specific_teams',
+            'team_ids' => 'array',
+            'team_ids.*' => 'integer|exists:teams,id',
+        ]);
+
+        $document->update(['visibility' => $validated['visibility']]);
+
+        if ($validated['visibility'] === 'specific_teams') {
+            $document->teams()->sync($validated['team_ids'] ?? []);
+        } else {
+            $document->teams()->detach();
+        }
+
+        return back()->with('success', 'Document updated.');
+    }
+
     public function download(Event $event, Document $document)
     {
         abort_if($document->event_id !== $event->id, 404);
@@ -88,6 +109,10 @@ class DocumentController extends Controller
 
     private function getVisibleUsers(Document $document, Event $event)
     {
+        if ($document->visibility === 'public') {
+            return collect();
+        }
+
         return User::whereHas('applications', function ($q) use ($event, $document) {
             $q->where('event_id', $event->id);
             if ($document->visibility === 'accepted_only' || $document->visibility === 'specific_teams') {

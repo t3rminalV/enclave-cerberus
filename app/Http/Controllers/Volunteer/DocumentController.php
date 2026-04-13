@@ -15,8 +15,6 @@ class DocumentController extends Controller
         $user = auth()->user();
         $application = $user->getApplicationForEvent($event->id);
 
-        abort_if(!$application, 403, 'You have not applied to this event.');
-
         $allDocuments = Document::with('teams')
             ->where('event_id', $event->id)
             ->get();
