@@ -67,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/events/{event}/applications/{application}/tags', [Admin\ApplicationController::class, 'syncTags'])->name('events.applications.tags');
         Route::post('/events/{event}/applications/bulk-status', [Admin\ApplicationController::class, 'bulkUpdateStatus'])->name('events.applications.bulk-status');
         Route::get('/events/{event}/applications/export/csv', [Admin\ApplicationController::class, 'export'])->name('events.applications.export');
+        Route::get('/events/{event}/applications/export/full-data/csv', [Admin\ApplicationController::class, 'exportFullData'])->middleware('admin')->name('events.applications.export-full');
 
         // Teams
         Route::get('/events/{event}/teams', [Admin\TeamController::class, 'index'])->name('events.teams.index');

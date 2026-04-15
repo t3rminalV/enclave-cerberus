@@ -13,7 +13,14 @@
         <a :href="route('admin.events.applications.export', event.id)" class="btn-secondary btn-sm">
           <Download class="w-3.5 h-3.5" /> Export CSV
         </a>
+        <a v-if="canExportFullData" :href="route('admin.events.applications.export-full', event.id)" class="btn-secondary btn-sm">
+          <Download class="w-3.5 h-3.5" /> Export Full Data
+        </a>
       </div>
+    </div>
+
+    <div v-if="anonymiseApplications" class="alert-info mb-6">
+      <span>Application anonymisation is enabled. Personal details are hidden in this view and in the standard CSV export.</span>
     </div>
 
     <!-- Status tabs -->
@@ -33,7 +40,7 @@
     <div class="flex gap-3 mb-4 flex-wrap">
       <div class="relative flex-1 max-w-xs">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 pointer-events-none" />
-        <input v-model="searchQuery" @input="search" class="input pl-9" placeholder="Search by name…" />
+        <input v-model="searchQuery" @input="search" class="input pl-9" :placeholder="anonymiseApplications ? 'Search by application ID…' : 'Search by name…'" />
       </div>
       <div v-if="selected.length > 0" class="flex items-center gap-2">
         <span class="text-sm text-surface-400">{{ selected.length }} selected</span>
@@ -130,6 +137,8 @@ const props = defineProps<{
   tags: any[];
   filters: Record<string, string>;
   statusCounts: Record<string, number>;
+  anonymiseApplications: boolean;
+  canExportFullData: boolean;
 }>();
 
 const selected = ref<number[]>([]);

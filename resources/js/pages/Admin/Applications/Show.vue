@@ -15,6 +15,10 @@
       </div>
     </div>
 
+    <div v-if="anonymiseApplications" class="alert-info mb-6">
+      <span>Application anonymisation is enabled. Applicant identity, profile details, and personal response fields are hidden in this view.</span>
+    </div>
+
     <div class="grid lg:grid-cols-3 gap-6">
       <!-- Left: form responses -->
       <div class="lg:col-span-2 space-y-4">
@@ -115,8 +119,9 @@
         <!-- Admin Notes -->
         <div class="card card-body">
           <h3 class="font-semibold text-white mb-3">Admin Notes <span class="text-surface-500 font-normal text-xs">(private)</span></h3>
-          <textarea v-model="notes" class="textarea" rows="4" placeholder="Internal notes…" />
-          <button @click="saveNotes" class="btn-secondary btn-sm mt-2 w-full">Save Notes</button>
+          <textarea v-model="notes" class="textarea" rows="4" placeholder="Internal notes…" :disabled="anonymiseApplications" />
+          <p v-if="anonymiseApplications" class="text-xs text-surface-400 mt-2">Private notes are hidden while anonymisation is enabled.</p>
+          <button @click="saveNotes" class="btn-secondary btn-sm mt-2 w-full" :disabled="anonymiseApplications">Save Notes</button>
         </div>
 
         <!-- Volunteer profile -->
@@ -158,6 +163,7 @@ const props = defineProps<{
   event: any;
   application: any;
   tags: any[];
+  anonymiseApplications: boolean;
 }>();
 
 const statusForm = useForm({ status: props.application.status, note: '' });

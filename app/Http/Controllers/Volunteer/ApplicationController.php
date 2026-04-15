@@ -33,7 +33,7 @@ class ApplicationController extends Controller
 
         if (! $user->hasCompleteProfile()) {
             return redirect()->route('profile.edit')
-                ->with('error', 'Please complete your profile before applying. First name, last name, and contact number are required.');
+                ->with('error', 'Please complete your profile before applying. First name, last name, contact number, and emergency contact details are required.');
         }
 
         $form = $event->stageOneForm()->with('fields')->firstOrFail();
@@ -72,7 +72,7 @@ class ApplicationController extends Controller
         abort_if($user->getApplicationForEvent($event->id) !== null, 409, 'You have already applied to this event.');
         if (! $user->hasCompleteProfile()) {
             return redirect()->route('profile.edit')
-                ->with('error', 'Please complete your profile before applying. First name, last name, and contact number are required.');
+                ->with('error', 'Please complete your profile before applying. First name, last name, contact number, and emergency contact details are required.');
         }
 
         $form = $event->stageOneForm()->with('fields')->firstOrFail();

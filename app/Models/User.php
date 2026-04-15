@@ -99,7 +99,11 @@ class User extends Authenticatable
 
     public function hasCompleteProfile(): bool
     {
-        return filled($this->first_name) && filled($this->last_name) && filled($this->phone);
+        return filled($this->first_name)
+            && filled($this->last_name)
+            && filled($this->phone)
+            && filled($this->emergency_contact_name)
+            && filled($this->emergency_contact_phone);
     }
 
     public function getApplicationForEvent(int $eventId): ?Application

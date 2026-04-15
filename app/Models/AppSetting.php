@@ -50,6 +50,11 @@ class AppSetting extends Model
             'label' => 'Notify: Document Shared',
             'description' => 'Send a Discord DM when a document is uploaded with notifications enabled.',
         ],
+        'anonymise_applications' => [
+            'value' => 'false', 'type' => 'boolean',
+            'label' => 'Anonymise Applications',
+            'description' => 'Hide applicant personal details in normal application views and standard exports. Admins can still use the full-data export.',
+        ],
     ];
 
     public static function get(string $key, mixed $default = null): mixed
