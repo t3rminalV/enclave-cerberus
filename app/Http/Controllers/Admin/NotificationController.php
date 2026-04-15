@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Event;
 use App\Models\User;
 use App\Services\NotificationService;
@@ -51,6 +52,13 @@ class NotificationController extends Controller
 
         $users = $query->get();
         $this->notifications->notifyBulkMessage($users->all(), $validated['subject'], $validated['message'], $event);
+
+        AuditLog::record('notification.bulk_sent', $event, [], [
+            'subject' => $validated['subject'],
+            'recipient_type' => $validated['recipient_type'],
+            'team_id' => $validated['team_id'] ?? null,
+            'count' => $users->count(),
+        ]);
 
         return back()->with('success', "Message queued for {$users->count()} volunteers.");
     }

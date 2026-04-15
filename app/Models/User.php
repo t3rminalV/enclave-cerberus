@@ -29,6 +29,10 @@ class User extends Authenticatable
         'medical_info',
     ];
 
+    protected $appends = [
+        'avatar_url',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -81,9 +85,15 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute(): string
     {
-        if ($this->discord_avatar) {
-            return "https://cdn.discordapp.com/avatars/{$this->discord_id}/{$this->discord_avatar}.png";
+        if ($this->discord_avatar && str_starts_with($this->discord_avatar, 'http')) {
+            return $this->discord_avatar;
         }
+
+        if ($this->discord_id && $this->discord_avatar) {
+            $extension = str_starts_with($this->discord_avatar, 'a_') ? 'gif' : 'png';
+            return "https://cdn.discordapp.com/avatars/{$this->discord_id}/{$this->discord_avatar}.{$extension}";
+        }
+
         return "https://cdn.discordapp.com/embed/avatars/0.png";
     }
 

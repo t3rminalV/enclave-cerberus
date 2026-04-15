@@ -50,10 +50,14 @@ class RotaController extends Controller
             'max_shifts_per_volunteer' => 'required|integer|min:1|max:20',
         ]);
 
-        RotaRules::updateOrCreate(
+        $old = RotaRules::where('event_id', $event->id)->first()?->only(array_keys($validated)) ?? [];
+
+        $rules = RotaRules::updateOrCreate(
             ['event_id' => $event->id],
             $validated
         );
+
+        AuditLog::record('rota.rules_saved', $event, $old, $rules->only(array_keys($validated)));
 
         return back()->with('success', 'Rules saved.');
     }
@@ -76,7 +80,9 @@ class RotaController extends Controller
             ->firstOrFail();
 
         $validated['event_id'] = $event->id;
-        Shift::create($validated);
+        $shift = Shift::create($validated);
+
+        AuditLog::record('shift.created', $shift, [], $shift->toArray());
 
         return back()->with('success', 'Shift created.');
     }
@@ -94,14 +100,22 @@ class RotaController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $old = $shift->only(array_keys($validated));
         $shift->update($validated);
+
+        AuditLog::record('shift.updated', $shift, $old, $shift->fresh()->only(array_keys($validated)));
+
         return back()->with('success', 'Shift updated.');
     }
 
     public function destroyShift(Event $event, Shift $shift)
     {
         abort_if($shift->event_id !== $event->id, 404);
+        $old = $shift->toArray();
         $shift->delete();
+
+        AuditLog::record('shift.deleted', $shift, $old, []);
+
         return back()->with('success', 'Shift deleted.');
     }
 
@@ -130,10 +144,16 @@ class RotaController extends Controller
             ->where('event_id', $event->id)
             ->firstOrFail();
 
-        RotaAssignment::updateOrCreate(
+        $assignment = RotaAssignment::updateOrCreate(
             ['shift_id' => $shift->id, 'user_id' => $validated['user_id']],
             ['is_manual' => true, 'notes' => $validated['notes'] ?? null]
         );
+
+        AuditLog::record('rota.assignment_saved', $shift, [], [
+            'assignment_id' => $assignment->id,
+            'user_id' => $validated['user_id'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
 
         return back()->with('success', 'Volunteer assigned.');
     }
@@ -141,7 +161,12 @@ class RotaController extends Controller
     public function removeAssignment(Event $event, Shift $shift, int $userId)
     {
         abort_if($shift->event_id !== $event->id, 404);
-        RotaAssignment::where('shift_id', $shift->id)->where('user_id', $userId)->delete();
+        $deleted = RotaAssignment::where('shift_id', $shift->id)->where('user_id', $userId)->delete();
+
+        AuditLog::record('rota.assignment_removed', $shift, ['user_id' => $userId], [
+            'deleted' => $deleted,
+        ]);
+
         return back()->with('success', 'Assignment removed.');
     }
 
@@ -161,6 +186,8 @@ class RotaController extends Controller
         if ($validated['is_live']) {
             $this->notifications->notifyRotaPublished($event);
             AuditLog::record('rota.published', $event);
+        } else {
+            AuditLog::record('rota.unpublished', $event);
         }
 
         return back()->with('success', $validated['is_live'] ? 'Rota published and volunteers notified.' : 'Rota unpublished.');
@@ -169,6 +196,11 @@ class RotaController extends Controller
     public function exportCsv(Event $event)
     {
         $event->load(['shifts.team', 'shifts.assignments.user']);
+
+        AuditLog::record('rota.exported', $event, [], [
+            'shifts_count' => $event->shifts->count(),
+            'assignments_count' => $event->shifts->sum(fn($shift) => $shift->assignments->count()),
+        ]);
 
         $headers = [
             'Content-Type' => 'text/csv',

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -25,7 +26,12 @@ class ProfileController extends Controller
             'medical_info' => 'nullable|string|max:1000',
         ]);
 
-        auth()->user()->update($validated);
+        $user = auth()->user();
+        $user->update($validated);
+
+        AuditLog::record('profile.updated', $user, [], [
+            'fields' => array_keys($validated),
+        ]);
 
         return back()->with('success', 'Profile updated.');
     }

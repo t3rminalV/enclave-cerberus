@@ -4,7 +4,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Audit Log</h1>
-        <p class="page-subtitle">Record of all admin actions</p>
+        <p class="page-subtitle">Record of actions from all users</p>
       </div>
     </div>
 
@@ -28,7 +28,7 @@
                 </div>
               </td>
               <td><code class="text-xs text-brand-300 bg-brand-900/20 px-1.5 py-0.5 rounded">{{ log.action }}</code></td>
-              <td class="text-surface-400 text-xs">{{ log.auditable_type?.split('\\').pop() }} #{{ log.auditable_id }}</td>
+              <td class="text-surface-400 text-xs">{{ formatSubject(log) }}</td>
               <td class="text-surface-400 text-xs whitespace-nowrap">{{ formatDate(log.created_at) }}</td>
             </tr>
             <tr v-if="!logs.data.length">
@@ -58,4 +58,10 @@ import AppLayout from '@/components/layout/AppLayout.vue';
 defineProps<{ logs: any }>();
 
 function formatDate(d: string) { return format(new Date(d), 'dd MMM yyyy HH:mm'); }
+
+function formatSubject(log: any) {
+  if (!log.auditable_type) return 'System';
+  const subject = log.auditable_type.split('\\').pop();
+  return log.auditable_id ? `${subject} #${log.auditable_id}` : subject;
+}
 </script>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
@@ -36,11 +37,21 @@ class DiscordController extends Controller
 
         Auth::login($user, remember: true);
 
+        AuditLog::record('auth.logged_in', $user, [], [
+            'new_user' => $user->wasRecentlyCreated,
+        ], $user);
+
         return redirect()->intended('/');
     }
 
     public function logout()
     {
+        $user = auth()->user();
+
+        if ($user) {
+            AuditLog::record('auth.logged_out', $user, [], [], $user);
+        }
+
         Auth::logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();

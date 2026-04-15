@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\Event;
 use App\Models\User;
@@ -67,6 +68,13 @@ class DocumentController extends Controller
             $this->notifications->notifyDocumentShared($document, $users->all());
         }
 
+        AuditLog::record('document.uploaded', $document, [], [
+            'event_id' => $event->id,
+            'title' => $document->title,
+            'visibility' => $document->visibility,
+            'notified' => $request->boolean('notify'),
+        ]);
+
         return back()->with('success', 'Document uploaded.');
     }
 
@@ -80,6 +88,11 @@ class DocumentController extends Controller
             'team_ids.*' => 'integer|exists:teams,id',
         ]);
 
+        $old = [
+            'visibility' => $document->visibility,
+            'team_ids' => $document->teams()->pluck('teams.id')->all(),
+        ];
+
         $document->update(['visibility' => $validated['visibility']]);
 
         if ($validated['visibility'] === 'specific_teams') {
@@ -87,6 +100,11 @@ class DocumentController extends Controller
         } else {
             $document->teams()->detach();
         }
+
+        AuditLog::record('document.updated', $document, $old, [
+            'visibility' => $document->visibility,
+            'team_ids' => $document->teams()->pluck('teams.id')->all(),
+        ]);
 
         return back()->with('success', 'Document updated.');
     }
@@ -96,14 +114,20 @@ class DocumentController extends Controller
         abort_if($document->event_id !== $event->id, 404);
 
         // Admin can always download
+        AuditLog::record('document.downloaded', $document, [], ['event_id' => $event->id]);
+
         return Storage::disk($document->disk)->download($document->path, $document->original_filename);
     }
 
     public function destroy(Event $event, Document $document)
     {
         abort_if($document->event_id !== $event->id, 404);
+        $old = $document->toArray();
         Storage::disk($document->disk)->delete($document->path);
         $document->delete();
+
+        AuditLog::record('document.deleted', $document, $old, []);
+
         return back()->with('success', 'Document deleted.');
     }
 

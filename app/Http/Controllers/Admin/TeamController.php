@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\AuditLog;
 use App\Models\Event;
 use App\Models\Team;
 use App\Models\TeamMember;
@@ -40,6 +41,8 @@ class TeamController extends Controller
 
         $team = Team::create($validated);
 
+        AuditLog::record('team.created', $team, [], $team->toArray());
+
         return back()->with('success', 'Team created.');
     }
 
@@ -53,14 +56,22 @@ class TeamController extends Controller
             'color' => 'required|string|regex:/^#[0-9a-fA-F]{6}$/',
         ]);
 
+        $old = $team->only(array_keys($validated));
         $team->update($validated);
+
+        AuditLog::record('team.updated', $team, $old, $team->fresh()->only(array_keys($validated)));
+
         return back()->with('success', 'Team updated.');
     }
 
     public function destroy(Event $event, Team $team)
     {
         abort_if($team->event_id !== $event->id, 404);
+        $old = $team->toArray();
         $team->delete();
+
+        AuditLog::record('team.deleted', $team, $old, []);
+
         return back()->with('success', 'Team deleted.');
     }
 
@@ -87,7 +98,12 @@ class TeamController extends Controller
             ->map(fn($m) => ['role' => $m['role'] ?? null, 'is_lead' => $m['is_lead'] ?? false])
             ->toArray();
 
+        $oldMembers = $team->members()->pluck('users.id')->all();
         $team->members()->sync($memberData);
+
+        AuditLog::record('team.members_synced', $team, ['user_ids' => $oldMembers], [
+            'user_ids' => array_keys($memberData),
+        ]);
 
         return back()->with('success', 'Team members updated.');
     }
@@ -102,6 +118,8 @@ class TeamController extends Controller
         foreach ($validated['order'] as $index => $teamId) {
             Team::where('id', $teamId)->where('event_id', $event->id)->update(['order' => $index]);
         }
+
+        AuditLog::record('team.reordered', $event, [], ['team_ids' => $validated['order']]);
 
         return back()->with('success', 'Teams reordered.');
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Event;
 use App\Models\Form;
 use App\Models\FormField;
@@ -54,6 +55,14 @@ class FormBuilderController extends Controller
             'fields.*.max_files' => 'nullable|integer',
         ]);
 
+        $form = Form::where('event_id', $event->id)->where('stage', $stage)->first();
+        $old = $form ? [
+            'title' => $form->title,
+            'description' => $form->description,
+            'is_active' => $form->is_active,
+            'fields_count' => $form->fields()->count(),
+        ] : [];
+
         $form = Form::updateOrCreate(
             ['event_id' => $event->id, 'stage' => $stage],
             [
@@ -85,6 +94,15 @@ class FormBuilderController extends Controller
         FormField::where('form_id', $form->id)
             ->whereNotIn('id', $incomingIds)
             ->delete();
+
+        AuditLog::record('form.saved', $form, $old, [
+            'event_id' => $event->id,
+            'stage' => $stage,
+            'title' => $form->title,
+            'description' => $form->description,
+            'is_active' => $form->is_active,
+            'fields_count' => count($incomingIds),
+        ]);
 
         return back()->with('success', 'Form saved.');
     }

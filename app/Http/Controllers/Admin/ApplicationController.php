@@ -79,14 +79,24 @@ class ApplicationController extends Controller
     public function updateNotes(Request $request, Event $event, Application $application)
     {
         $validated = $request->validate(['admin_notes' => 'nullable|string|max:5000']);
+        $old = ['admin_notes' => $application->admin_notes];
         $application->update($validated);
+
+        AuditLog::record('application.notes_updated', $application, $old, $validated);
+
         return back()->with('success', 'Notes saved.');
     }
 
     public function syncTags(Request $request, Event $event, Application $application)
     {
         $validated = $request->validate(['tag_ids' => 'array', 'tag_ids.*' => 'integer|exists:tags,id']);
+        $old = ['tag_ids' => $application->tags()->pluck('tags.id')->all()];
         $application->tags()->sync($validated['tag_ids'] ?? []);
+
+        AuditLog::record('application.tags_synced', $application, $old, [
+            'tag_ids' => $validated['tag_ids'] ?? [],
+        ]);
+
         return back()->with('success', 'Tags updated.');
     }
 
@@ -125,6 +135,10 @@ class ApplicationController extends Controller
             ->where('event_id', $event->id)
             ->orderByDesc('submitted_at')
             ->get();
+
+        AuditLog::record('application.exported', $event, [], [
+            'count' => $applications->count(),
+        ]);
 
         $headers = [
             'Content-Type' => 'text/csv',

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\ApplicationFile;
 use App\Models\ApplicationResponse;
+use App\Models\AuditLog;
 use App\Models\Event;
 use App\Models\Form;
 use App\Services\NotificationService;
@@ -101,6 +102,14 @@ class ApplicationController extends Controller
                 $this->notifications->notifyApplicationReceived($application);
             }
 
+            AuditLog::record(
+                $shouldSubmit ? 'application.submitted' : 'application.draft_created',
+                $application,
+                [],
+                ['event_id' => $event->id, 'status' => $application->status],
+                $user
+            );
+
             return $application;
         });
 
@@ -122,6 +131,11 @@ class ApplicationController extends Controller
         DB::transaction(function () use ($request, $application, $form) {
             $this->saveFormResponses($request, $application, $form);
         });
+
+        AuditLog::record('application.updated', $application, [], [
+            'event_id' => $application->event_id,
+            'status' => $application->status,
+        ]);
 
         return back()->with('success', 'Application saved.');
     }
@@ -158,6 +172,13 @@ class ApplicationController extends Controller
             if ($isFirstSubmission) {
                 $this->notifications->notifyApplicationReceived($application);
             }
+
+            AuditLog::record('application.submitted', $application, [
+                'status' => $isFirstSubmission ? 'draft' : 'submitted',
+            ], [
+                'event_id' => $application->event_id,
+                'status' => 'submitted',
+            ]);
         });
 
         return redirect()->route('volunteer.applications.show', $application)
@@ -168,6 +189,10 @@ class ApplicationController extends Controller
     {
         abort_if($application->user_id !== auth()->id(), 403);
         abort_if($file->application_id !== $application->id, 404);
+
+        AuditLog::record('application_file.downloaded', $file, [], [
+            'application_id' => $application->id,
+        ]);
 
         return Storage::disk($file->disk)->download($file->path, $file->original_filename);
     }
