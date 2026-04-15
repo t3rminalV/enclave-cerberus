@@ -105,6 +105,8 @@ Route::middleware(['auth'])->group(function () {
             'logs' => \App\Models\AuditLog::with('user')->orderByDesc('created_at')->paginate(50),
         ]))->name('audit-log');
 
+        Route::get('/changelog', [Admin\ChangelogController::class, 'index'])->name('changelog');
+
         // Tags
         Route::apiResource('tags', \App\Http\Controllers\Admin\TagController::class)->only(['index', 'store', 'destroy']);
 

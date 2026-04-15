@@ -55,6 +55,13 @@
         <NavLink :href="route('profile.edit')" :active="isRoute('profile.edit')" class="mt-1">
           <Settings class="w-4 h-4" /> Profile Settings
         </NavLink>
+        <Link
+          v-if="isStaff && appVersion"
+          :href="route('admin.changelog')"
+          class="mt-3 flex items-center justify-center rounded px-2 py-1 text-xs text-surface-500 hover:text-surface-300 hover:bg-surface-800"
+        >
+          Cerberus v{{ appVersion }}
+        </Link>
       </div>
     </aside>
 
@@ -121,6 +128,14 @@
           <NavLink :href="route('profile.edit')" :active="isRoute('profile.edit')" @click="mobileOpen = false">
             <Settings class="w-4 h-4" /> Profile
           </NavLink>
+          <Link
+            v-if="isStaff && appVersion"
+            :href="route('admin.changelog')"
+            class="mt-3 flex items-center px-3 py-2 rounded text-xs text-surface-500 hover:text-surface-300 hover:bg-surface-800"
+            @click="mobileOpen = false"
+          >
+            Cerberus v{{ appVersion }}
+          </Link>
         </nav>
       </aside>
     </Transition>
@@ -151,6 +166,7 @@ const page = usePage();
 const user = computed(() => page.props.auth.user as any);
 const isAdmin = computed(() => user.value?.role === 'admin');
 const isStaff = computed(() => user.value?.role === 'admin' || user.value?.role === 'organiser');
+const appVersion = computed(() => (page.props.app as any)?.version);
 const mobileOpen = ref(false);
 
 function isRoute(pattern: string): boolean {

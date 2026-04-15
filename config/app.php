@@ -1,5 +1,7 @@
 <?php
 
+$package = json_decode(file_get_contents(base_path('package.json')), true) ?: [];
+
 return [
 
     /*
@@ -14,6 +16,8 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
+
+    'version' => $package['version'] ?? '0.1.0',
 
     /*
     |--------------------------------------------------------------------------
