@@ -74,11 +74,24 @@ class ApplicationController extends Controller
 
         $anonymiseApplications = AppSetting::get('anonymise_applications', false);
 
+        $priorApplications = Application::where('user_id', $application->user_id)
+            ->where('id', '!=', $application->id)
+            ->with('event:id,name,slug,starts_at')
+            ->orderByDesc('created_at')
+            ->get(['id', 'event_id', 'status', 'created_at'])
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'status' => $a->status,
+                'created_at' => $a->created_at,
+                'event' => $a->event,
+            ]);
+
         return Inertia::render('Admin/Applications/Show', [
             'event' => $event,
             'application' => $anonymiseApplications ? $this->anonymiseApplication($application, true) : $application,
             'tags' => Tag::orderBy('name')->get(),
             'anonymiseApplications' => $anonymiseApplications,
+            'priorApplications' => $anonymiseApplications ? [] : $priorApplications,
         ]);
     }
 

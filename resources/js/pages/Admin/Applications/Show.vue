@@ -146,6 +146,22 @@
             </div>
           </dl>
         </div>
+
+        <!-- Prior applications -->
+        <div v-if="priorApplications.length" class="card card-body">
+          <h3 class="font-semibold text-white mb-3">
+            Returning Volunteer
+            <span class="text-surface-500 font-normal text-xs">({{ priorApplications.length }} prior {{ priorApplications.length === 1 ? 'application' : 'applications' }})</span>
+          </h3>
+          <ul class="space-y-2 text-sm">
+            <li v-for="prior in priorApplications" :key="prior.id" class="flex items-center justify-between gap-2">
+              <Link :href="route('admin.events.applications.show', [prior.event.id, prior.id])" class="text-surface-200 hover:text-white truncate">
+                {{ prior.event.name }}
+              </Link>
+              <ApplicationStatusBadge :status="prior.status" />
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </AppLayout>
@@ -164,6 +180,12 @@ const props = defineProps<{
   application: any;
   tags: any[];
   anonymiseApplications: boolean;
+  priorApplications: Array<{
+    id: number;
+    status: string;
+    created_at: string;
+    event: { id: number; name: string; slug: string; starts_at: string | null };
+  }>;
 }>();
 
 const statusForm = useForm({ status: props.application.status, note: '' });
