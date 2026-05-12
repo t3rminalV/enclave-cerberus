@@ -9,7 +9,7 @@
           <span>Form Builder</span>
         </div>
         <h1 class="page-title">Stage {{ stage }} Form</h1>
-        <p class="page-subtitle">{{ stage === 1 ? 'Initial application form' : 'Additional info (unlocks on acceptance)' }}</p>
+        <p class="page-subtitle">{{ stageDescription }}</p>
       </div>
       <div class="flex items-center gap-2">
         <button @click="preview = !preview" class="btn-secondary">
@@ -148,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { VueDraggable } from 'vue-draggable-plus';
 import { Plus, Save, Eye, ChevronRight, Type, AlignLeft, Hash, Mail, Phone, List, CheckSquare, Upload, Image, Calendar, Minus, Heading, FileText, Copy, Library } from 'lucide-vue-next';
@@ -175,6 +175,12 @@ const props = defineProps<{
 const cloneSourceId = ref<number | null>(null);
 const cloneMode = ref<'replace' | 'append'>('append');
 const cloning = ref(false);
+
+const stageDescription = computed(() => ({
+  1: 'Initial application form',
+  2: 'Additional info (unlocks on acceptance)',
+  3: 'Post-event feedback survey',
+}[props.stage] ?? 'Form'));
 
 const preview = ref(false);
 const saving = ref(false);

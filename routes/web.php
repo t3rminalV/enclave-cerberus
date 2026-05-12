@@ -53,6 +53,10 @@ Route::middleware(['auth'])->group(function () {
         // Documents
         Route::get('/events/{event}/documents', [Volunteer\DocumentController::class, 'index'])->name('documents.index');
         Route::get('/events/{event}/documents/{document}/download', [Volunteer\DocumentController::class, 'download'])->name('documents.download');
+
+        // Feedback
+        Route::get('/events/{event}/feedback', [Volunteer\FeedbackController::class, 'show'])->name('feedback.show');
+        Route::post('/events/{event}/feedback', [Volunteer\FeedbackController::class, 'store'])->name('feedback.store');
     });
 
     // Staff routes — accessible to admin + organiser

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Volunteer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\FeedbackSubmission;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -25,9 +26,19 @@ class DashboardController extends Controller
             ->orderBy('starts_at')
             ->get();
 
+        $submittedEventIds = FeedbackSubmission::where('user_id', $user->id)->pluck('event_id');
+        $pendingFeedback = Event::query()
+            ->whereHas('applications', fn ($q) => $q->where('user_id', $user->id)->where('status', 'accepted'))
+            ->whereHas('feedbackForm', fn ($q) => $q->where('is_active', true))
+            ->where('ends_at', '<', $now)
+            ->whereNotIn('id', $submittedEventIds)
+            ->orderByDesc('ends_at')
+            ->get(['id', 'name', 'starts_at', 'ends_at']);
+
         return Inertia::render('Volunteer/Dashboard', [
             'myApplications' => $myApplications,
             'openEvents' => $openEvents,
+            'pendingFeedback' => $pendingFeedback,
         ]);
     }
 }

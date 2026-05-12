@@ -59,6 +59,11 @@ class Event extends Model
         return $this->hasOne(Form::class)->where('stage', '2');
     }
 
+    public function feedbackForm(): HasOne
+    {
+        return $this->hasOne(Form::class)->where('stage', '3');
+    }
+
     public function applications(): HasMany
     {
         return $this->hasMany(Application::class);

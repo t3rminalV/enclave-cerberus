@@ -14,7 +14,7 @@ class FormBuilderController extends Controller
 {
     public function show(Event $event, string $stage)
     {
-        abort_if(!in_array($stage, ['1', '2']), 404);
+        abort_if(!in_array($stage, ['1', '2', '3']), 404);
 
         $form = Form::with('fields')->firstOrNew([
             'event_id' => $event->id,
@@ -22,7 +22,12 @@ class FormBuilderController extends Controller
         ]);
 
         if (!$form->exists) {
-            $form->title = $stage === '1' ? 'Application Form' : 'Additional Information';
+            $form->title = match ($stage) {
+                '1' => 'Application Form',
+                '2' => 'Additional Information',
+                '3' => 'Post-Event Feedback',
+                default => 'Form',
+            };
         }
 
         $cloneableForms = Form::with('event:id,name')
@@ -48,7 +53,7 @@ class FormBuilderController extends Controller
 
     public function clone(Request $request, Event $event, string $stage)
     {
-        abort_if(!in_array($stage, ['1', '2']), 404);
+        abort_if(!in_array($stage, ['1', '2', '3']), 404);
 
         $validated = $request->validate([
             'source_form_id' => 'required|integer|exists:forms,id',
@@ -93,7 +98,7 @@ class FormBuilderController extends Controller
 
     public function save(Request $request, Event $event, string $stage)
     {
-        abort_if(!in_array($stage, ['1', '2']), 404);
+        abort_if(!in_array($stage, ['1', '2', '3']), 404);
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',

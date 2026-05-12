@@ -58,7 +58,7 @@ class EventController extends Controller
 
     public function show(Event $event): Response
     {
-        $event->load(['forms.fields', 'stageOneForm', 'stageTwoForm', 'teams', 'rotaPublication']);
+        $event->load(['forms.fields', 'stageOneForm', 'stageTwoForm', 'feedbackForm', 'teams', 'rotaPublication']);
         $stats = [
             'applications_total' => $event->applications()->count(),
             'applications_submitted' => $event->applications()->where('status', 'submitted')->count(),

@@ -52,6 +52,13 @@
         color="purple"
       />
       <ActionCard
+        title="Feedback Survey"
+        :description="event.feedback_form ? 'Survey configured' : 'Not set up yet'"
+        icon="MessageSquare"
+        :href="route('admin.events.forms.show', [event.id, 3])"
+        color="amber"
+      />
+      <ActionCard
         title="Teams"
         :description="`${stats.teams_count} teams configured`"
         icon="Users"

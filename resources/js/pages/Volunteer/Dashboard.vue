@@ -8,6 +8,23 @@
       </div>
     </div>
 
+    <!-- Pending feedback -->
+    <div v-if="pendingFeedback.length" class="mb-8">
+      <h2 class="text-lg font-semibold text-white mb-4">Feedback Wanted</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-for="event in pendingFeedback" :key="event.id" class="card card-body border-amber-500/30 bg-amber-900/10">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <h3 class="font-semibold text-white">{{ event.name }}</h3>
+            <MessageSquare class="w-4 h-4 text-amber-400 shrink-0" />
+          </div>
+          <p class="text-xs text-surface-400 mb-3">Ended {{ formatRelative(event.ends_at) }}</p>
+          <Link :href="route('volunteer.feedback.show', event.id)" class="btn-secondary btn-sm w-full">
+            Leave Feedback
+          </Link>
+        </div>
+      </div>
+    </div>
+
     <!-- Open events to apply -->
     <div v-if="openEvents.length" class="mb-8">
       <h2 class="text-lg font-semibold text-white mb-4">Open for Applications</h2>
@@ -64,12 +81,16 @@
 
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ClipboardList, Calendar, FileText } from 'lucide-vue-next';
+import { ClipboardList, Calendar, FileText, MessageSquare } from 'lucide-vue-next';
 import { format, formatDistanceToNow } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ApplicationStatusBadge from '@/components/ui/ApplicationStatusBadge.vue';
 
-defineProps<{ myApplications: any[]; openEvents: any[] }>();
+defineProps<{
+  myApplications: any[];
+  openEvents: any[];
+  pendingFeedback: Array<{ id: number; name: string; starts_at: string; ends_at: string }>;
+}>();
 
 const user = usePage().props.auth.user;
 
