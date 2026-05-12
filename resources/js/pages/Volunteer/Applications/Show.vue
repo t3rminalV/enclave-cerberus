@@ -53,14 +53,15 @@
         <div class="p-6">
           <form @submit.prevent="submit">
             <div class="space-y-5">
-              <FormFieldInput
-                v-for="field in form.fields"
-                :key="field.id"
-                :field="field"
-                :error="errors[`fields.${field.id}`]"
-                v-model="fieldValues[field.id]"
-                @file-change="(files) => fileValues[field.id] = files"
-              />
+              <template v-for="field in form.fields" :key="field.id">
+                <FormFieldInput
+                  v-if="isFieldVisible(field.visible_when, fieldValues)"
+                  :field="field"
+                  :error="errors[`fields.${field.id}`]"
+                  v-model="fieldValues[field.id]"
+                  @file-change="(files) => fileValues[field.id] = files"
+                />
+              </template>
             </div>
             <div class="mt-6 flex gap-3">
               <button type="button" @click="save" :disabled="processing" class="btn-secondary">Save</button>
@@ -121,6 +122,7 @@ import { formatDistanceToNow } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ApplicationStatusBadge from '@/components/ui/ApplicationStatusBadge.vue';
 import FormFieldInput from '@/components/forms/FormFieldInput.vue';
+import { isFieldVisible } from '@/composables/useFieldVisibility';
 
 const props = defineProps<{ application: any; form: any; user: any }>();
 

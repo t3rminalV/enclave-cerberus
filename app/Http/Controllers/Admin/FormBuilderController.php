@@ -112,6 +112,9 @@ class FormBuilderController extends Controller
             'fields.*.accepted_file_types' => 'nullable|array',
             'fields.*.max_file_size_kb' => 'nullable|integer',
             'fields.*.max_files' => 'nullable|integer',
+            'fields.*.visible_when' => 'nullable|array',
+            'fields.*.visible_when.field_id' => 'nullable|integer',
+            'fields.*.visible_when.equals' => 'nullable',
         ]);
 
         $form = Form::where('event_id', $event->id)->where('stage', $stage)->first();

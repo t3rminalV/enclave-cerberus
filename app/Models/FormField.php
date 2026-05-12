@@ -11,6 +11,7 @@ class FormField extends Model
         'form_id', 'type', 'label', 'placeholder', 'help_text',
         'required', 'order', 'options', 'validation_rules',
         'accepted_file_types', 'max_file_size_kb', 'max_files', 'content',
+        'visible_when',
     ];
 
     protected function casts(): array
@@ -20,10 +21,24 @@ class FormField extends Model
             'options' => 'array',
             'validation_rules' => 'array',
             'accepted_file_types' => 'array',
+            'visible_when' => 'array',
             'max_file_size_kb' => 'integer',
             'max_files' => 'integer',
             'order' => 'integer',
         ];
+    }
+
+    public function isVisibleGiven(array $responsesByFieldId): bool
+    {
+        if (empty($this->visible_when)) return true;
+        $rule = $this->visible_when;
+        $depFieldId = $rule['field_id'] ?? null;
+        $expected = $rule['equals'] ?? null;
+        if (!$depFieldId) return true;
+        $actual = $responsesByFieldId[$depFieldId] ?? null;
+        if (is_array($expected)) return in_array($actual, $expected, true);
+        if (is_array($actual)) return in_array($expected, $actual, true);
+        return (string) $actual === (string) $expected;
     }
 
     public function form(): BelongsTo

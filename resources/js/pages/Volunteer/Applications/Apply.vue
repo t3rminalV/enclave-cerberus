@@ -27,14 +27,15 @@
 
       <form @submit.prevent="submit">
         <div class="space-y-5">
-          <div v-for="field in form.fields" :key="field.id">
+          <template v-for="field in form.fields" :key="field.id">
             <FormFieldInput
+              v-if="isFieldVisible(field.visible_when, fieldValues)"
               :field="field"
               :error="errors[`fields.${field.id}`]"
               v-model="fieldValues[field.id]"
               @file-change="(files) => fileValues[field.id] = files"
             />
-          </div>
+          </template>
         </div>
 
         <div class="mt-8 flex gap-3">
@@ -57,6 +58,7 @@ import { ChevronLeft, Info } from 'lucide-vue-next';
 import { format } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import FormFieldInput from '@/components/forms/FormFieldInput.vue';
+import { isFieldVisible } from '@/composables/useFieldVisibility';
 
 const props = defineProps<{ event: any; form: any; user: any }>();
 

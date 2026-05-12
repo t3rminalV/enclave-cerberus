@@ -81,16 +81,70 @@
           <input :value="(field.accepted_file_types ?? []).join(', ')" @input="update('accepted_file_types', ($event.target as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean))" class="input" placeholder=".pdf, .doc" />
         </div>
       </div>
+
+      <!-- Conditional visibility -->
+      <details v-if="!isDisplayOnly && conditionableFields.length" class="rounded-md border border-surface-700/60 bg-surface-800/30">
+        <summary class="px-3 py-2 text-xs font-medium text-surface-300 cursor-pointer flex items-center gap-2">
+          <Eye class="w-3.5 h-3.5" />
+          Conditional visibility
+          <span v-if="hasCondition" class="text-brand-400">· active</span>
+        </summary>
+        <div class="px-3 pb-3 pt-1 grid sm:grid-cols-[1fr_auto_1fr_auto] gap-2 items-end">
+          <div>
+            <label class="label">Show only when</label>
+            <select :value="field.visible_when?.field_id ?? ''" @change="setConditionField(($event.target as HTMLSelectElement).value)" class="select">
+              <option value="">Always visible</option>
+              <option v-for="f in conditionableFields" :key="f.id" :value="f.id">
+                {{ f.label || '(unlabeled)' }}
+              </option>
+            </select>
+          </div>
+          <div class="text-surface-400 text-sm pb-2">equals</div>
+          <div>
+            <label class="label">Value</label>
+            <select v-if="conditionFieldOptions.length" :value="field.visible_when?.equals ?? ''" @change="update('visible_when', { ...(field.visible_when ?? {}), equals: ($event.target as HTMLSelectElement).value })" class="select">
+              <option v-for="opt in conditionFieldOptions" :key="opt" :value="opt">{{ opt }}</option>
+            </select>
+            <input v-else :value="field.visible_when?.equals ?? ''" @input="update('visible_when', { ...(field.visible_when ?? {}), equals: ($event.target as HTMLInputElement).value })" class="input" placeholder="Expected value" :disabled="!field.visible_when?.field_id" />
+          </div>
+          <button v-if="hasCondition" @click="update('visible_when', null)" class="btn-ghost btn-sm">Clear</button>
+        </div>
+      </details>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { GripVertical, Trash2, X, Plus } from 'lucide-vue-next';
+import { GripVertical, Trash2, X, Plus, Eye } from 'lucide-vue-next';
 
-const props = defineProps<{ field: any }>();
+const props = defineProps<{ field: any; siblingFields?: any[] }>();
 const emit = defineEmits(['update', 'remove']);
+
+const conditionableFields = computed(() =>
+  (props.siblingFields ?? []).filter(f =>
+    f.uid !== props.field.uid &&
+    f.id != null &&
+    ['select', 'radio', 'checkbox', 'multiselect'].includes(f.type)
+  )
+);
+
+const conditionFieldOptions = computed(() => {
+  const ref = props.field.visible_when?.field_id;
+  if (!ref) return [];
+  const source = conditionableFields.value.find(f => f.id === ref);
+  return source?.options ?? [];
+});
+
+const hasCondition = computed(() => Boolean(props.field.visible_when?.field_id));
+
+function setConditionField(value: string) {
+  if (!value) {
+    update('visible_when', null);
+    return;
+  }
+  update('visible_when', { field_id: Number(value), equals: '' });
+}
 
 const fieldTypeLabels: Record<string, string> = {
   text: 'Short Text', textarea: 'Long Text', email: 'Email', phone: 'Phone', number: 'Number',

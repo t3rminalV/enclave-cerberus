@@ -200,9 +200,14 @@ class ApplicationController extends Controller
     private function validateRequiredFields(Request $request, Form $form, ?Application $application = null): void
     {
         $errors = [];
+        $responsesById = $this->collectResponsesByFieldId($request, $form);
 
         foreach ($form->fields as $field) {
             if ($field->isDisplayOnly() || ! $field->required) {
+                continue;
+            }
+
+            if (! $field->isVisibleGiven($responsesById)) {
                 continue;
             }
 
@@ -230,6 +235,15 @@ class ApplicationController extends Controller
         if (! empty($errors)) {
             throw ValidationException::withMessages($errors);
         }
+    }
+
+    private function collectResponsesByFieldId(Request $request, Form $form): array
+    {
+        $map = [];
+        foreach ($form->fields as $field) {
+            $map[$field->id] = $request->input("fields.{$field->id}");
+        }
+        return $map;
     }
 
     private function saveFormResponses(Request $request, Application $application, Form $form): void

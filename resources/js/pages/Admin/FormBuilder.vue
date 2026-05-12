@@ -112,6 +112,7 @@
               v-for="(field, index) in formData.fields"
               :key="field.uid"
               :field="field"
+              :sibling-fields="formData.fields"
               @update="(f) => formData.fields[index] = f"
               @remove="removeField(index)"
             />
