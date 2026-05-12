@@ -38,6 +38,8 @@ class EventController extends Controller
             'applications_open_at' => 'nullable|date',
             'applications_close_at' => 'nullable|date',
             'status' => 'required|in:draft,open,closed,completed',
+            'tickettailor_event_id' => 'nullable|string|max:64',
+            'tickettailor_ticket_type_id' => 'nullable|string|max:64',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
@@ -88,6 +90,8 @@ class EventController extends Controller
             'applications_open_at' => 'nullable|date',
             'applications_close_at' => 'nullable|date',
             'status' => 'required|in:draft,open,closed,completed',
+            'tickettailor_event_id' => 'nullable|string|max:64',
+            'tickettailor_ticket_type_id' => 'nullable|string|max:64',
         ]);
 
         $old = $event->toArray();

@@ -43,6 +43,21 @@
         </select>
       </div>
     </div>
+
+    <details class="border-t border-surface-700/60 pt-4">
+      <summary class="cursor-pointer text-sm font-semibold text-surface-200">TicketTailor integration (optional)</summary>
+      <p class="text-xs text-surface-400 mt-2">When set, accepted volunteers are auto-issued a complimentary ticket of the chosen type.</p>
+      <div class="grid sm:grid-cols-2 gap-4 mt-3">
+        <div>
+          <label class="label">TicketTailor Event ID</label>
+          <input v-model="form.tickettailor_event_id" class="input" placeholder="ev_..." />
+        </div>
+        <div>
+          <label class="label">Volunteer Ticket Type ID</label>
+          <input v-model="form.tickettailor_ticket_type_id" class="input" placeholder="tt_..." />
+        </div>
+      </div>
+    </details>
   </div>
 </template>
 

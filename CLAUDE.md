@@ -25,6 +25,8 @@ DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_REDIRECT_URI=http://localhost/auth/discord/callback
 DISCORD_BOT_TOKEN=
+# TicketTailor (optional — enables auto-issue of volunteer tickets on accept)
+TICKETTAILOR_API_KEY=
 ```
 
 ## Architecture notes

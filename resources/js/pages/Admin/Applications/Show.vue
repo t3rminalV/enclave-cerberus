@@ -147,6 +147,29 @@
           </dl>
         </div>
 
+        <!-- TicketTailor -->
+        <div v-if="application.status === 'accepted' && (application.tickettailor_ticket_id || application.tickettailor_last_error || event.tickettailor_event_id)" class="card card-body">
+          <h3 class="font-semibold text-white mb-3">Volunteer Ticket</h3>
+          <div v-if="application.tickettailor_ticket_id" class="space-y-1 text-sm">
+            <p class="text-surface-200 flex items-center gap-2"><Ticket class="w-4 h-4 text-green-400" /> Issued</p>
+            <p class="text-xs text-surface-400">Ref: <span class="font-mono">{{ application.tickettailor_ticket_reference || application.tickettailor_ticket_id }}</span></p>
+            <p class="text-xs text-surface-400" v-if="application.tickettailor_issued_at">Sent {{ formatRelative(application.tickettailor_issued_at) }}</p>
+          </div>
+          <div v-else-if="!event.tickettailor_event_id" class="text-sm text-surface-400">
+            No TicketTailor mapping set for this event. Add the IDs on the
+            <Link :href="route('admin.events.edit', event.id)" class="underline hover:no-underline">event settings</Link>.
+          </div>
+          <div v-else class="space-y-2">
+            <p v-if="application.tickettailor_last_error" class="text-sm text-red-300">
+              Last attempt failed: {{ application.tickettailor_last_error }}
+            </p>
+            <p v-else class="text-sm text-surface-300">Ticket has not yet been issued.</p>
+            <button @click="retryTicket" :disabled="retryingTicket" class="btn-secondary btn-sm w-full">
+              <Ticket class="w-3.5 h-3.5" /> {{ retryingTicket ? 'Issuing…' : 'Issue Ticket Now' }}
+            </button>
+          </div>
+        </div>
+
         <!-- Prior applications -->
         <div v-if="priorApplications.length" class="card card-body">
           <h3 class="font-semibold text-white mb-3">
@@ -170,8 +193,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ChevronRight, Paperclip } from 'lucide-vue-next';
-import { format } from 'date-fns';
+import { ChevronRight, Paperclip, Ticket } from 'lucide-vue-next';
+import { format, formatDistanceToNow } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import ApplicationStatusBadge from '@/components/ui/ApplicationStatusBadge.vue';
 
@@ -221,4 +244,14 @@ function toggleTag(id: number) {
 function saveTags() {
   router.post(route('admin.events.applications.tags', [props.event.id, props.application.id]), { tag_ids: selectedTagIds.value });
 }
+
+const retryingTicket = ref(false);
+function retryTicket() {
+  retryingTicket.value = true;
+  router.post(route('admin.events.applications.ticket', [props.event.id, props.application.id]), {}, {
+    onFinish: () => { retryingTicket.value = false; },
+  });
+}
+
+function formatRelative(d: string) { return formatDistanceToNow(new Date(d), { addSuffix: true }); }
 </script>

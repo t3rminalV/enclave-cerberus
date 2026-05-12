@@ -44,5 +44,7 @@ const form = useForm({
   applications_open_at: props.event.applications_open_at?.slice(0, 16) ?? '',
   applications_close_at: props.event.applications_close_at?.slice(0, 16) ?? '',
   status: props.event.status,
+  tickettailor_event_id: props.event.tickettailor_event_id ?? '',
+  tickettailor_ticket_type_id: props.event.tickettailor_ticket_type_id ?? '',
 });
 </script>

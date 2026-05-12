@@ -76,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/events/{event}/applications/{application}', [Admin\ApplicationController::class, 'show'])->name('events.applications.show');
         Route::patch('/events/{event}/applications/{application}/status', [Admin\ApplicationController::class, 'updateStatus'])->name('events.applications.status');
         Route::patch('/events/{event}/applications/{application}/notes', [Admin\ApplicationController::class, 'updateNotes'])->name('events.applications.notes');
+        Route::post('/events/{event}/applications/{application}/ticket', [Admin\ApplicationController::class, 'retryTicket'])->name('events.applications.ticket');
         Route::post('/events/{event}/applications/{application}/tags', [Admin\ApplicationController::class, 'syncTags'])->name('events.applications.tags');
         Route::post('/events/{event}/applications/bulk-status', [Admin\ApplicationController::class, 'bulkUpdateStatus'])->name('events.applications.bulk-status');
         Route::get('/events/{event}/applications/export/csv', [Admin\ApplicationController::class, 'export'])->name('events.applications.export');

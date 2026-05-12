@@ -17,6 +17,7 @@ class Event extends Model
         'name', 'slug', 'description', 'location',
         'starts_at', 'ends_at', 'applications_open_at', 'applications_close_at',
         'status', 'created_by',
+        'tickettailor_event_id', 'tickettailor_ticket_type_id',
     ];
 
     protected function casts(): array

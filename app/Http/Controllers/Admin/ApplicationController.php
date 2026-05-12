@@ -112,7 +112,27 @@ class ApplicationController extends Controller
             $this->notifications->notifyStatusChanged($application, $oldStatus);
         }
 
+        if ($validated['status'] === 'accepted' && $oldStatus !== 'accepted') {
+            \App\Jobs\IssueTicketTailorTicket::dispatchAfterResponse($application->id);
+        }
+
         return back()->with('success', 'Application status updated.');
+    }
+
+    public function retryTicket(Event $event, Application $application, \App\Services\TicketTailorService $tickets)
+    {
+        abort_unless($application->event_id === $event->id, 404);
+        abort_unless($application->status === 'accepted', 422, 'Only accepted applications can be issued a ticket.');
+
+        try {
+            $tickets->issueVolunteerTicket($application);
+            AuditLog::record('application.ticket_issued', $application, [], [
+                'reference' => $application->fresh()->tickettailor_ticket_reference,
+            ]);
+            return back()->with('success', 'TicketTailor ticket issued.');
+        } catch (\Throwable $e) {
+            return back()->with('error', "Ticket issue failed: {$e->getMessage()}");
+        }
     }
 
     public function updateNotes(Request $request, Event $event, Application $application)
@@ -157,6 +177,9 @@ class ApplicationController extends Controller
             $application->transitionTo($validated['status'], auth()->user(), $validated['note'] ?? null);
             if ($oldStatus !== $validated['status']) {
                 $this->notifications->notifyStatusChanged($application, $oldStatus);
+            }
+            if ($validated['status'] === 'accepted' && $oldStatus !== 'accepted') {
+                \App\Jobs\IssueTicketTailorTicket::dispatchAfterResponse($application->id);
             }
         }
 

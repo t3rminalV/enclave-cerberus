@@ -36,5 +36,6 @@ const form = useForm({
   starts_at: '', ends_at: '',
   applications_open_at: '', applications_close_at: '',
   status: 'draft',
+  tickettailor_event_id: '', tickettailor_ticket_type_id: '',
 });
 </script>

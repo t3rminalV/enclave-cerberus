@@ -12,6 +12,8 @@ class Application extends Model
     protected $fillable = [
         'user_id', 'event_id', 'status', 'current_stage',
         'submitted_at', 'reviewed_by', 'reviewed_at', 'admin_notes',
+        'tickettailor_ticket_id', 'tickettailor_ticket_reference',
+        'tickettailor_issued_at', 'tickettailor_last_error',
     ];
 
     protected function casts(): array
@@ -19,6 +21,7 @@ class Application extends Model
         return [
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
+            'tickettailor_issued_at' => 'datetime',
             'current_stage' => 'integer',
         ];
     }

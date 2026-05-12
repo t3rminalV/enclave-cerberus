@@ -35,4 +35,9 @@ return [
         'bot_token' => env('DISCORD_BOT_TOKEN'),
     ],
 
+    'tickettailor' => [
+        'api_key' => env('TICKETTAILOR_API_KEY'),
+        'base_url' => env('TICKETTAILOR_BASE_URL', 'https://api.tickettailor.com/v1'),
+    ],
+
 ];
