@@ -56,6 +56,30 @@
           </div>
         </div>
 
+        <!-- Clone from existing form -->
+        <details v-if="!preview && cloneableForms.length" class="card card-body mb-4 group">
+          <summary class="flex items-center justify-between cursor-pointer text-sm font-semibold text-surface-200">
+            <span class="flex items-center gap-2"><Copy class="w-4 h-4" /> Clone from another form</span>
+            <span class="text-xs text-surface-400 group-open:hidden">{{ cloneableForms.length }} available</span>
+          </summary>
+          <div class="grid sm:grid-cols-[1fr_auto_auto] gap-3 mt-4">
+            <select v-model="cloneSourceId" class="input">
+              <option :value="null">Choose a form…</option>
+              <option v-for="f in cloneableForms" :key="f.id" :value="f.id">
+                {{ f.event_name }} — Stage {{ f.stage }} ({{ f.field_count }} field{{ f.field_count === 1 ? '' : 's' }})
+              </option>
+            </select>
+            <select v-model="cloneMode" class="input">
+              <option value="append">Append</option>
+              <option value="replace">Replace all</option>
+            </select>
+            <button @click="cloneFrom" :disabled="!cloneSourceId || cloning" class="btn-secondary">
+              {{ cloning ? 'Cloning…' : 'Clone' }}
+            </button>
+          </div>
+          <p class="text-xs text-surface-400 mt-2">Cloned fields are inserted as new — saving the form persists them. Unsaved local edits will be lost.</p>
+        </details>
+
         <!-- Preview header -->
         <div v-if="preview" class="card card-body mb-4">
           <h2 class="text-xl font-bold text-white">{{ formData.title }}</h2>
@@ -112,7 +136,7 @@
 import { ref } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { VueDraggable } from 'vue-draggable-plus';
-import { Plus, Save, Eye, ChevronRight, Type, AlignLeft, Hash, Mail, Phone, List, CheckSquare, Upload, Image, Calendar, Minus, Heading, FileText } from 'lucide-vue-next';
+import { Plus, Save, Eye, ChevronRight, Type, AlignLeft, Hash, Mail, Phone, List, CheckSquare, Upload, Image, Calendar, Minus, Heading, FileText, Copy } from 'lucide-vue-next';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import FieldEditor from '@/components/forms/FieldEditor.vue';
 import FieldPreview from '@/components/forms/FieldPreview.vue';
@@ -124,7 +148,18 @@ const props = defineProps<{
   event: any;
   form: any;
   stage: number;
+  cloneableForms: Array<{
+    id: number;
+    stage: number;
+    title: string;
+    event_name: string;
+    field_count: number;
+  }>;
 }>();
+
+const cloneSourceId = ref<number | null>(null);
+const cloneMode = ref<'replace' | 'append'>('append');
+const cloning = ref(false);
 
 const preview = ref(false);
 const saving = ref(false);
@@ -182,5 +217,18 @@ function save() {
   router.put(route('admin.events.forms.save', [props.event.id, props.stage]), formData.value, {
     onFinish: () => { saving.value = false; },
   });
+}
+
+function cloneFrom() {
+  if (!cloneSourceId.value) return;
+  if (cloneMode.value === 'replace' && formData.value.fields.length) {
+    if (!confirm('Replace all current fields with the cloned ones?')) return;
+  }
+  cloning.value = true;
+  router.post(
+    route('admin.events.forms.clone', [props.event.id, props.stage]),
+    { source_form_id: cloneSourceId.value, mode: cloneMode.value },
+    { onFinish: () => { cloning.value = false; } },
+  );
 }
 </script>

@@ -25,11 +25,70 @@ class FormBuilderController extends Controller
             $form->title = $stage === '1' ? 'Application Form' : 'Additional Information';
         }
 
+        $cloneableForms = Form::with('event:id,name')
+            ->where('id', '!=', $form->id ?? 0)
+            ->whereHas('fields')
+            ->orderByDesc('updated_at')
+            ->get(['id', 'event_id', 'stage', 'title'])
+            ->map(fn ($f) => [
+                'id' => $f->id,
+                'stage' => $f->stage,
+                'title' => $f->title,
+                'event_name' => $f->event?->name,
+                'field_count' => $f->fields()->count(),
+            ]);
+
         return Inertia::render('Admin/FormBuilder', [
             'event' => $event,
             'form' => $form,
             'stage' => (int) $stage,
+            'cloneableForms' => $cloneableForms,
         ]);
+    }
+
+    public function clone(Request $request, Event $event, string $stage)
+    {
+        abort_if(!in_array($stage, ['1', '2']), 404);
+
+        $validated = $request->validate([
+            'source_form_id' => 'required|integer|exists:forms,id',
+            'mode' => 'required|in:replace,append',
+        ]);
+
+        $source = Form::with('fields')->findOrFail($validated['source_form_id']);
+
+        $target = Form::firstOrCreate(
+            ['event_id' => $event->id, 'stage' => $stage],
+            ['title' => $source->title, 'description' => $source->description, 'is_active' => true]
+        );
+
+        if ($validated['mode'] === 'replace') {
+            $target->fields()->delete();
+            $target->update(['title' => $source->title, 'description' => $source->description]);
+            $startOrder = 0;
+        } else {
+            $startOrder = ($target->fields()->max('order') ?? -1) + 1;
+        }
+
+        foreach ($source->fields as $i => $field) {
+            $attrs = $field->only([
+                'type', 'label', 'placeholder', 'help_text', 'required',
+                'options', 'validation_rules', 'accepted_file_types',
+                'max_file_size_kb', 'max_files', 'content',
+            ]);
+            $attrs['form_id'] = $target->id;
+            $attrs['order'] = $startOrder + $i;
+            FormField::create($attrs);
+        }
+
+        AuditLog::record('form.cloned', $target, [], [
+            'source_form_id' => $source->id,
+            'source_event_id' => $source->event_id,
+            'mode' => $validated['mode'],
+            'fields_copied' => $source->fields->count(),
+        ]);
+
+        return back()->with('success', "Cloned {$source->fields->count()} field(s) from \"{$source->event?->name}\".");
     }
 
     public function save(Request $request, Event $event, string $stage)

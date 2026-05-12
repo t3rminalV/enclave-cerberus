@@ -58,6 +58,7 @@ Route::middleware(['auth'])->group(function () {
         // Form Builder
         Route::get('/events/{event}/forms/{stage}', [Admin\FormBuilderController::class, 'show'])->name('events.forms.show');
         Route::put('/events/{event}/forms/{stage}', [Admin\FormBuilderController::class, 'save'])->name('events.forms.save');
+        Route::post('/events/{event}/forms/{stage}/clone', [Admin\FormBuilderController::class, 'clone'])->name('events.forms.clone');
 
         // Applications
         Route::get('/events/{event}/applications', [Admin\ApplicationController::class, 'index'])->name('events.applications.index');
