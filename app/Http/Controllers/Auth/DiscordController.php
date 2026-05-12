@@ -36,6 +36,7 @@ class DiscordController extends Controller
         );
 
         Auth::login($user, remember: true);
+        request()->session()->regenerate();
 
         AuditLog::record('auth.logged_in', $user, [], [
             'new_user' => $user->wasRecentlyCreated,
