@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Event;
+use App\Models\MessageTemplate;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
@@ -24,7 +25,33 @@ class NotificationController extends Controller
                 ->orderByDesc('created_at')
                 ->limit(50)
                 ->get(),
+            'templates' => MessageTemplate::orderBy('name')->get(),
         ]);
+    }
+
+    public function storeTemplate(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'subject' => 'required|string|max:255',
+            'body' => 'required|string|max:2000',
+        ]);
+
+        $template = MessageTemplate::create([
+            ...$validated,
+            'created_by' => auth()->id(),
+        ]);
+
+        AuditLog::record('message_template.created', $template, [], $validated);
+        return back()->with('success', "Template \"{$template->name}\" saved.");
+    }
+
+    public function destroyTemplate(MessageTemplate $template)
+    {
+        $name = $template->name;
+        $template->delete();
+        AuditLog::record('message_template.deleted', $template, ['name' => $name], []);
+        return back()->with('success', "Template \"{$name}\" deleted.");
     }
 
     public function sendBulk(Request $request, Event $event)

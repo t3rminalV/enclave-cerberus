@@ -107,6 +107,8 @@ Route::middleware(['auth'])->group(function () {
         // Notifications
         Route::get('/events/{event}/notifications', [Admin\NotificationController::class, 'index'])->name('events.notifications.index');
         Route::post('/events/{event}/notifications/bulk', [Admin\NotificationController::class, 'sendBulk'])->name('events.notifications.bulk');
+        Route::post('/message-templates', [Admin\NotificationController::class, 'storeTemplate'])->name('message-templates.store');
+        Route::delete('/message-templates/{template}', [Admin\NotificationController::class, 'destroyTemplate'])->name('message-templates.destroy');
 
         // Audit Log
         Route::get('/audit-log', fn() => Inertia::render('Admin/AuditLog', [

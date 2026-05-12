@@ -6,6 +6,7 @@ use App\Jobs\SendDiscordNotification;
 use App\Models\Application;
 use App\Models\Document;
 use App\Models\Event;
+use App\Models\MessageTemplate;
 use App\Models\User;
 
 class NotificationService
@@ -110,13 +111,33 @@ class NotificationService
         $eventContext = $event ? " — {$event->name}" : '';
 
         foreach ($users as $user) {
+            $vars = $this->templateVarsFor($user, $event);
+            $renderedSubject = MessageTemplate::render($subject, $vars);
+            $renderedBody = MessageTemplate::render($message, $vars);
+
             SendDiscordNotification::dispatchAfterResponse($user,
-                "**{$subject}**{$eventContext}",
+                "**{$renderedSubject}**{$eventContext}",
                 [[
-                    'description' => $message,
+                    'description' => $renderedBody,
                     'color' => 0x6366f1,
                 ]]
             );
         }
+    }
+
+    private function templateVarsFor(User $user, ?Event $event): array
+    {
+        $teamName = null;
+        if ($event) {
+            $teamName = $user->teams()->where('teams.event_id', $event->id)->value('teams.name');
+        }
+
+        return [
+            'name' => $user->name,
+            'first_name' => $user->first_name ?: $user->name,
+            'discord_username' => $user->discord_username,
+            'event' => $event?->name ?? '',
+            'team' => $teamName ?? '',
+        ];
     }
 }
