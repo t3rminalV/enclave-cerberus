@@ -37,6 +37,20 @@
               {{ type.label }}
             </button>
           </div>
+
+          <h3 class="text-sm font-semibold text-surface-200 mt-5 mb-3 flex items-center gap-2">
+            <Library class="w-4 h-4" /> Field Library
+          </h3>
+          <div class="flex flex-col gap-1.5">
+            <button
+              v-for="item in fieldLibrary"
+              :key="item.key"
+              @click="addFromLibrary(item.key)"
+              class="text-left text-xs px-3 py-2 rounded-md border border-surface-600 bg-surface-700/30 hover:bg-surface-700 hover:border-brand-500/50 text-surface-200 transition-all"
+            >
+              {{ item.label }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -136,7 +150,7 @@
 import { ref } from 'vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { VueDraggable } from 'vue-draggable-plus';
-import { Plus, Save, Eye, ChevronRight, Type, AlignLeft, Hash, Mail, Phone, List, CheckSquare, Upload, Image, Calendar, Minus, Heading, FileText, Copy } from 'lucide-vue-next';
+import { Plus, Save, Eye, ChevronRight, Type, AlignLeft, Hash, Mail, Phone, List, CheckSquare, Upload, Image, Calendar, Minus, Heading, FileText, Copy, Library } from 'lucide-vue-next';
 import AppLayout from '@/components/layout/AppLayout.vue';
 import FieldEditor from '@/components/forms/FieldEditor.vue';
 import FieldPreview from '@/components/forms/FieldPreview.vue';
@@ -206,6 +220,44 @@ function addField(type: string) {
     max_files: 1,
     order: formData.value.fields.length,
   });
+}
+
+const fieldLibrary: Array<{ key: string; label: string; preset: Record<string, any> }> = [
+  { key: 'tshirt', label: 'T-Shirt Size', preset: { type: 'select', label: 'T-Shirt size', required: true, options: ['XS','S','M','L','XL','XXL','3XL'] } },
+  { key: 'dietary', label: 'Dietary Requirements', preset: { type: 'textarea', label: 'Dietary requirements or allergies', help_text: 'Tell us about any allergies, intolerances, or dietary preferences.', placeholder: 'e.g. vegetarian, nut allergy' } },
+  { key: 'emergency_contact', label: 'Emergency Contact', preset: { type: 'text', label: 'Emergency contact (name and phone)', required: true, placeholder: 'Jane Doe — 07700 900000' } },
+  { key: 'dob', label: 'Date of Birth', preset: { type: 'date', label: 'Date of birth', required: true } },
+  { key: 'address', label: 'Postal Address', preset: { type: 'textarea', label: 'Postal address', placeholder: 'Street, City, Postcode' } },
+  { key: 'previous_experience', label: 'Previous Experience', preset: { type: 'textarea', label: 'Previous volunteering or relevant experience', help_text: 'No experience required — but tell us if you have any!' } },
+  { key: 'availability', label: 'Availability', preset: { type: 'checkbox', label: 'Which days can you attend?', options: ['Friday','Saturday','Sunday'], required: true } },
+  { key: 'team_preference', label: 'Team Preference', preset: { type: 'multiselect', label: 'Which teams would you like to be considered for?', options: ['Stage','Tech','Tournament','Front of House','Security','Catering'], help_text: 'Pick as many as you\'d like — we can\'t guarantee assignment.' } },
+  { key: 'travel', label: 'Travel & Accommodation', preset: { type: 'select', label: 'How will you be travelling to the event?', options: ['Driving','Train','Coach','Lift share','Other'] } },
+  { key: 'photo_consent', label: 'Photo Consent', preset: { type: 'radio', label: 'Are you happy to appear in event photos and promotional material?', required: true, options: ['Yes','No','Ask me in person'] } },
+  { key: 'tshirt_fit', label: 'T-Shirt Fit', preset: { type: 'select', label: 'T-Shirt fit', options: ['Unisex','Fitted'] } },
+  { key: 'pronouns', label: 'Pronouns', preset: { type: 'text', label: 'Pronouns', placeholder: 'e.g. she/her, they/them' } },
+  { key: 'access_needs', label: 'Access Needs', preset: { type: 'textarea', label: 'Access or accessibility needs', help_text: 'Anything we should know to make sure you can take part comfortably.' } },
+  { key: 'first_aid', label: 'First-Aid Trained', preset: { type: 'radio', label: 'Are you a trained first-aider?', options: ['Yes — in-date certificate','Yes — out of date','No'] } },
+];
+
+function addFromLibrary(key: string) {
+  const item = fieldLibrary.find(i => i.key === key);
+  if (!item) return;
+  const base = {
+    uid: uid(),
+    id: null,
+    type: 'text',
+    label: '',
+    placeholder: '',
+    help_text: '',
+    required: false,
+    options: null as string[] | null,
+    content: '',
+    accepted_file_types: null,
+    max_file_size_kb: 5120,
+    max_files: 1,
+    order: formData.value.fields.length,
+  };
+  formData.value.fields.push({ ...base, ...item.preset });
 }
 
 function removeField(index: number) {
