@@ -15,7 +15,7 @@ class NotificationService
         $event = $application->event;
         $user = $application->user;
 
-        SendDiscordNotification::dispatch($user,
+        SendDiscordNotification::dispatchAfterResponse($user,
             "**Application Received** :white_check_mark:",
             [[
                 'title' => "Your application for {$event->name} has been received",
@@ -46,7 +46,7 @@ class NotificationService
 
         $info = $statusLabels[$newStatus];
 
-        SendDiscordNotification::dispatch($user,
+        SendDiscordNotification::dispatchAfterResponse($user,
             "**Application Update** — {$event->name}",
             [[
                 'title' => "Application Status: {$info['label']}",
@@ -61,7 +61,7 @@ class NotificationService
         $event = $application->event;
         $user = $application->user;
 
-        SendDiscordNotification::dispatch($user,
+        SendDiscordNotification::dispatchAfterResponse($user,
             "**Additional Information Required** — {$event->name}",
             [[
                 'title' => "Stage 2 of your application is now available",
@@ -78,14 +78,14 @@ class NotificationService
         })->get();
 
         foreach ($acceptedVolunteers as $volunteer) {
-            SendDiscordNotification::dispatch($volunteer,
+            SendDiscordNotification::dispatchAfterResponse($volunteer,
                 "**Rota Published** :calendar: — {$event->name}",
                 [[
                     'title' => "The volunteer rota for {$event->name} is now live",
                     'description' => "Log in to the volunteer portal to view your shifts and team assignments.",
                     'color' => 0x6366f1,
                 ]]
-            )->delay(now()->addSeconds(2 * $acceptedVolunteers->search($volunteer)));
+            );
         }
     }
 
@@ -94,7 +94,7 @@ class NotificationService
         $eventName = $document->event?->name ?? 'the event';
 
         foreach ($users as $user) {
-            SendDiscordNotification::dispatch($user,
+            SendDiscordNotification::dispatchAfterResponse($user,
                 "**New Document Available** :page_facing_up: — {$eventName}",
                 [[
                     'title' => $document->title,
@@ -110,7 +110,7 @@ class NotificationService
         $eventContext = $event ? " — {$event->name}" : '';
 
         foreach ($users as $user) {
-            SendDiscordNotification::dispatch($user,
+            SendDiscordNotification::dispatchAfterResponse($user,
                 "**{$subject}**{$eventContext}",
                 [[
                     'description' => $message,

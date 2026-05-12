@@ -4,9 +4,8 @@
 - **Laravel 13** (PHP 8.5), **Inertia.js + Vue 3 + TypeScript**, **Tailwind CSS v4**
 - **PostgreSQL** (via Sail in dev, Laravel Cloud in prod)
 - **Redis** for cache (Sail in dev)
-- Standard database queue driver (no Horizon)
 - Discord OAuth via `socialiteproviders/discord` + `laravel/socialite`
-- Discord bot notifications via HTTP API (jobs in `app/Jobs/SendDiscordNotification.php`)
+- Discord bot notifications via HTTP API — dispatched after-response, no queue worker needed (`app/Jobs/SendDiscordNotification.php`)
 
 ## Dev Setup
 ```bash
@@ -36,7 +35,7 @@ DISCORD_BOT_TOKEN=
 - `AppLayout.vue` handles both admin and volunteer navigation based on `auth.user.is_admin`
 - Application stage 2 auto-unlocks when status transitions to `accepted` (see `Application::transitionTo()`)
 - Rota generation in `app/Services/RotaGeneratorService.php` — respects team membership, shift duration rules, rest periods, max shifts per volunteer
-- Discord notifications are queued jobs — run `./vendor/bin/sail artisan queue:work` to process them
+- Discord notifications run after the HTTP response via `dispatchAfterResponse` — fire-and-forget, failures are logged but not retried
 
 ## Conventions
 - Controllers return `Inertia::render('Path/To/Page', [...])` — page path matches `resources/js/pages/`

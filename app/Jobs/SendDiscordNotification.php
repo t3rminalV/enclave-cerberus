@@ -4,18 +4,13 @@ namespace App\Jobs;
 
 use App\Models\User;
 use App\Services\DiscordService;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
-class SendDiscordNotification implements ShouldQueue
+class SendDiscordNotification
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
-    public int $tries = 3;
-    public int $backoff = 60;
+    use Dispatchable;
 
     public function __construct(
         public readonly User $user,
@@ -25,6 +20,13 @@ class SendDiscordNotification implements ShouldQueue
 
     public function handle(DiscordService $discord): void
     {
-        $discord->sendDirectMessage($this->user, $this->content, $this->embeds);
+        try {
+            $discord->sendDirectMessage($this->user, $this->content, $this->embeds);
+        } catch (Throwable $e) {
+            Log::warning('Discord notification failed', [
+                'user_id' => $this->user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
