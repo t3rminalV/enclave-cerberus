@@ -26,6 +26,7 @@ class RotaController extends Controller
         return Inertia::render('Volunteer/Rota', [
             'event' => $event,
             'currentUser' => $user,
+            'calendarFeedUrl' => route('calendar.feed', $user->ensureCalendarToken()),
         ]);
     }
 }

@@ -1,11 +1,18 @@
 <?php
 
 use App\Http\Controllers\Auth\DiscordController;
+use App\Http\Controllers\CalendarFeedController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Volunteer;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
+// Calendar feed (public, token-gated)
+Route::get('/cal/{token}.ics', [CalendarFeedController::class, 'show'])
+    ->where('token', '[a-f0-9]{48}')
+    ->middleware('throttle:60,1')
+    ->name('calendar.feed');
 
 // Auth
 Route::get('/login', fn() => Inertia::render('Auth/Login'))->name('login')->middleware('guest');

@@ -11,6 +11,29 @@
       </div>
     </div>
 
+    <!-- Calendar subscription -->
+    <details class="card card-body mb-6">
+      <summary class="flex items-center justify-between cursor-pointer">
+        <span class="flex items-center gap-2 text-sm font-semibold text-surface-200">
+          <Calendar class="w-4 h-4" /> Subscribe in your calendar app
+        </span>
+        <span class="text-xs text-surface-400">Google · Apple · Outlook</span>
+      </summary>
+      <div class="mt-4 space-y-3">
+        <p class="text-sm text-surface-300">
+          Paste this URL into Google Calendar (<em>Other calendars → From URL</em>), Apple Calendar (<em>File → New Calendar Subscription</em>), or Outlook (<em>Add calendar → Subscribe from web</em>). Your assigned shifts will sync automatically.
+        </p>
+        <div class="flex gap-2">
+          <input :value="calendarFeedUrl" readonly class="input flex-1 font-mono text-xs" @focus="($event.target as HTMLInputElement).select()" />
+          <button @click="copyFeedUrl" class="btn-secondary shrink-0">
+            <component :is="copied ? Check : Copy" class="w-3.5 h-3.5" />
+            {{ copied ? 'Copied' : 'Copy' }}
+          </button>
+        </div>
+        <p class="text-xs text-surface-400">Keep this link private — anyone with it can read your shift schedule.</p>
+      </div>
+    </details>
+
     <!-- My shifts highlight -->
     <div v-if="myShifts.length" class="mb-6">
       <h2 class="text-sm font-semibold text-surface-300 uppercase tracking-wide mb-3">Your Shifts</h2>
@@ -79,13 +102,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ChevronLeft } from 'lucide-vue-next';
+import { ChevronLeft, Calendar, Check, Copy } from 'lucide-vue-next';
 import { format } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout.vue';
 
-const props = defineProps<{ event: any; currentUser: any }>();
+const props = defineProps<{ event: any; currentUser: any; calendarFeedUrl: string }>();
+
+const copied = ref(false);
+async function copyFeedUrl() {
+  try {
+    await navigator.clipboard.writeText(props.calendarFeedUrl);
+    copied.value = true;
+    setTimeout(() => { copied.value = false; }, 1500);
+  } catch {
+    // no-op
+  }
+}
 
 function formatDate(d: string) { return format(new Date(d), 'dd MMM yyyy'); }
 function formatDT(d: string) { return format(new Date(d), 'EEE dd MMM HH:mm'); }

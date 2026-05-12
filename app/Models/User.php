@@ -27,6 +27,7 @@ class User extends Authenticatable
         'tshirt_size',
         'dietary_requirements',
         'medical_info',
+        'calendar_token',
     ];
 
     protected $appends = [
@@ -109,5 +110,14 @@ class User extends Authenticatable
     public function getApplicationForEvent(int $eventId): ?Application
     {
         return $this->applications()->where('event_id', $eventId)->first();
+    }
+
+    public function ensureCalendarToken(): string
+    {
+        if (!$this->calendar_token) {
+            $this->calendar_token = bin2hex(random_bytes(24));
+            $this->save();
+        }
+        return $this->calendar_token;
     }
 }
