@@ -47,20 +47,27 @@
     <details class="border-t border-surface-700/60 pt-4">
       <summary class="cursor-pointer text-sm font-semibold text-surface-200">TicketTailor integration (optional)</summary>
       <p class="text-xs text-surface-400 mt-2">When set, accepted volunteers are auto-issued a complimentary ticket of the chosen type.</p>
-      <div class="grid sm:grid-cols-2 gap-4 mt-3">
-        <div>
-          <label class="label">TicketTailor Event ID</label>
-          <input v-model="form.tickettailor_event_id" class="input" placeholder="ev_..." />
-        </div>
-        <div>
-          <label class="label">Volunteer Ticket Type ID</label>
-          <input v-model="form.tickettailor_ticket_type_id" class="input" placeholder="tt_..." />
-        </div>
+      <div class="mt-3">
+        <TicketTailorPicker v-model="ttSelection" />
       </div>
     </details>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{ form: any }>();
+import { computed } from 'vue';
+import TicketTailorPicker from './TicketTailorPicker.vue';
+
+const props = defineProps<{ form: any }>();
+
+const ttSelection = computed<{ eventId: string | null; ticketTypeId: string | null }>({
+  get: () => ({
+    eventId: props.form.tickettailor_event_id || null,
+    ticketTypeId: props.form.tickettailor_ticket_type_id || null,
+  }),
+  set: (v) => {
+    props.form.tickettailor_event_id = v.eventId ?? '';
+    props.form.tickettailor_ticket_type_id = v.ticketTypeId ?? '';
+  },
+});
 </script>

@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\TicketTailorService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SettingsController extends Controller
 {
-    public function index()
+    public function index(TicketTailorService $tickets)
     {
         return Inertia::render('Admin/Settings/Index', [
             'users' => User::orderBy('name')->get()->map(fn(User $u) => [
@@ -24,6 +25,11 @@ class SettingsController extends Controller
                 'created_at'       => $u->created_at,
             ]),
             'settings' => AppSetting::allWithDefaults(),
+            'integrations' => [
+                'tickettailor' => [
+                    'configured' => $tickets->isConfigured(),
+                ],
+            ],
         ]);
     }
 

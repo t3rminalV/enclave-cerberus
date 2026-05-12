@@ -33,24 +33,19 @@ class TicketTailorService
         }
 
         $user = $application->user;
-        [$firstName, $lastName] = $this->splitName($user);
+        $fullName = $this->fullName($user);
         $email = $user->email;
-        if (!$email) {
-            throw new RuntimeException("Cannot issue a TicketTailor ticket: user #{$user->id} has no email.");
-        }
 
-        $response = Http::withBasicAuth(config('services.tickettailor.api_key'), '')
-            ->acceptJson()
+        $response = $this->client()
             ->asForm()
-            ->timeout(15)
-            ->post(config('services.tickettailor.base_url') . '/issued_tickets', [
+            ->post('/v1/issued_tickets', array_filter([
                 'event_id' => $event->tickettailor_event_id,
                 'ticket_type_id' => $event->tickettailor_ticket_type_id,
-                'first_name' => $firstName,
-                'last_name' => $lastName,
+                'full_name' => $fullName,
                 'email' => $email,
                 'reference' => "volunteer-app-{$application->id}",
-            ]);
+                'send_email' => $email ? 'true' : null,
+            ], fn ($v) => $v !== null && $v !== ''));
 
         if ($response->failed()) {
             $message = $this->extractError($response);
@@ -63,9 +58,10 @@ class TicketTailorService
             throw new RuntimeException($message);
         }
 
-        $data = $response->json();
-        $ticketId = $data['id'] ?? null;
-        $reference = $data['reference'] ?? $data['barcode'] ?? null;
+        // TicketTailor wraps the created ticket in { data: [IssuedTicket] }
+        $ticket = $response->json('data.0') ?? $response->json('data') ?? $response->json();
+        $ticketId = $ticket['id'] ?? null;
+        $reference = $ticket['reference'] ?? $ticket['barcode'] ?? null;
 
         $application->update([
             'tickettailor_ticket_id' => $ticketId,
@@ -75,13 +71,42 @@ class TicketTailorService
         ]);
     }
 
-    private function splitName($user): array
+    public function listEvents(?string $startingAfter = null, ?string $search = null, int $limit = 100): array
+    {
+        $response = $this->client()
+            ->get('/v1/events', array_filter([
+                'limit' => $limit,
+                'starting_after' => $startingAfter,
+                'name' => $search,
+            ]));
+
+        if ($response->failed()) {
+            throw new RuntimeException($this->extractError($response));
+        }
+
+        return $response->json();
+    }
+
+    public function ping(): bool
+    {
+        $response = $this->client()->get('/v1/ping');
+        return $response->successful();
+    }
+
+    private function client()
+    {
+        return Http::withBasicAuth(config('services.tickettailor.api_key'), '')
+            ->baseUrl(rtrim(config('services.tickettailor.base_url'), '/'))
+            ->acceptJson()
+            ->timeout(15);
+    }
+
+    private function fullName($user): string
     {
         if (filled($user->first_name) || filled($user->last_name)) {
-            return [$user->first_name ?: '—', $user->last_name ?: ''];
+            return trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
         }
-        $parts = preg_split('/\s+/', trim((string) $user->name), 2);
-        return [$parts[0] ?? '—', $parts[1] ?? ''];
+        return (string) ($user->name ?: 'Volunteer');
     }
 
     private function extractError(Response $response): string

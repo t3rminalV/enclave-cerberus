@@ -128,14 +128,46 @@
           </form>
         </div>
       </div>
+
+      <!-- Integrations -->
+      <div class="card xl:col-span-2">
+        <div class="card-header">
+          <h2 class="text-base font-semibold text-surface-100">Integrations</h2>
+          <p class="text-sm text-surface-400 mt-0.5">Connections to external services</p>
+        </div>
+        <div class="p-6 space-y-4">
+          <div class="flex items-center gap-3 flex-wrap">
+            <Ticket class="w-5 h-5 text-surface-300 shrink-0" />
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-surface-100">TicketTailor</p>
+              <p class="text-xs text-surface-400">
+                <template v-if="!integrations.tickettailor.configured">
+                  Set <code>TICKETTAILOR_API_KEY</code> in your environment to enable auto-issue of volunteer tickets.
+                </template>
+                <template v-else>API key detected. Test the connection and map each event to a TicketTailor event + volunteer ticket type from the event edit form.</template>
+              </p>
+            </div>
+            <button v-if="integrations.tickettailor.configured" @click="testTicketTailor" :disabled="ttTesting" class="btn-secondary btn-sm">
+              <Loader2 v-if="ttTesting" class="w-3.5 h-3.5 animate-spin" />
+              <Check v-else-if="ttStatus === 'ok'" class="w-3.5 h-3.5 text-green-400" />
+              <AlertCircle v-else-if="ttStatus === 'fail'" class="w-3.5 h-3.5 text-red-400" />
+              {{ ttTesting ? 'Testing…' : 'Test Connection' }}
+            </button>
+          </div>
+          <p v-if="ttMessage" :class="ttStatus === 'ok' ? 'text-green-300' : 'text-red-300'" class="text-xs">
+            {{ ttMessage }}
+          </p>
+        </div>
+      </div>
     </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
+import axios from 'axios';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { Check, Loader2 } from 'lucide-vue-next';
+import { Check, Loader2, Ticket, AlertCircle } from 'lucide-vue-next';
 import AppLayout from '@/components/layout/AppLayout.vue';
 
 interface UserRow {
@@ -158,7 +190,28 @@ interface Setting {
 const props = defineProps<{
   users: UserRow[];
   settings: Setting[];
+  integrations: { tickettailor: { configured: boolean } };
 }>();
+
+const ttTesting = ref(false);
+const ttStatus = ref<'ok' | 'fail' | null>(null);
+const ttMessage = ref<string | null>(null);
+
+async function testTicketTailor() {
+  ttTesting.value = true;
+  ttStatus.value = null;
+  ttMessage.value = null;
+  try {
+    const { data } = await axios.get(route('admin.tickettailor.ping'));
+    ttStatus.value = data.ok ? 'ok' : 'fail';
+    ttMessage.value = data.message ?? null;
+  } catch (e: any) {
+    ttStatus.value = 'fail';
+    ttMessage.value = e.response?.data?.message ?? e.message ?? 'Connection failed.';
+  } finally {
+    ttTesting.value = false;
+  }
+}
 
 const page = usePage();
 const currentUserId = page.props.auth.user?.id;

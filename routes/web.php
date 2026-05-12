@@ -122,6 +122,12 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/changelog', [Admin\ChangelogController::class, 'index'])->name('changelog');
 
+        // TicketTailor proxy (read-only, throttled)
+        Route::middleware('throttle:30,1')->prefix('tickettailor')->name('tickettailor.')->group(function () {
+            Route::get('/ping', [Admin\TicketTailorController::class, 'ping'])->name('ping');
+            Route::get('/events', [Admin\TicketTailorController::class, 'events'])->name('events');
+        });
+
         // Tags
         Route::apiResource('tags', \App\Http\Controllers\Admin\TagController::class)->only(['index', 'store', 'destroy']);
 
